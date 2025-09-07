@@ -8,6 +8,6 @@
 
 ### To Build the Source Code
 
-*   **IDE:** Android Studio Narwhal 3 (or compatible version)
+*   **IDE:** Android Studio Narwhal 3
 *   **Java Development Kit (JDK):** Version 11
 *   **Android SDK:** API Level 36
