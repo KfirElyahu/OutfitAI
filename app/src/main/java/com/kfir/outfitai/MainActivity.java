@@ -14,7 +14,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.signup_screen);
+        setContentView(R.layout.signin_screen);
 
         View mainView = findViewById(R.id.main);
         final ScrollView scrollView = findViewById(R.id.scrollView);
