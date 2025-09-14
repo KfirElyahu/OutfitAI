@@ -14,8 +14,38 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.signin_screen);
+        showWelcomeScreen();
+    }
 
+    private void showWelcomeScreen() {
+        setContentView(R.layout.welcome_screen);
+
+        View signInButton = findViewById(R.id.SignIn_button);
+        View signUpButton = findViewById(R.id.SignUp_button);
+
+        signInButton.setOnClickListener(v -> showSignInScreen());
+        signUpButton.setOnClickListener(v -> showSignUpScreen());
+    }
+
+
+    private void showSignInScreen() {
+        setContentView(R.layout.signin_screen);
+        View backButton = findViewById(R.id.Back_button);
+        backButton.setOnClickListener(v -> showWelcomeScreen());
+        setupKeyboardHandlingForForms();
+    }
+
+
+    private void showSignUpScreen() {
+        setContentView(R.layout.signup_screen);
+
+        View backButton = findViewById(R.id.Back_button);
+        backButton.setOnClickListener(v -> showWelcomeScreen());
+
+        setupKeyboardHandlingForForms();
+    }
+
+    private void setupKeyboardHandlingForForms() {
         View mainView = findViewById(R.id.main);
         final ScrollView scrollView = findViewById(R.id.scrollView);
 
@@ -25,12 +55,11 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        //source: https://github.com/lofcoding/ImeOverlappingIssue
+        // source: https://github.com/lofcoding/ImeOverlappingIssue
         ImeUtils.addImeListener(mainView, isVisible -> {
             if (isVisible) {
                 View focusedView = getCurrentFocus();
-
-                if (focusedView != null) {
+                if (focusedView != null && scrollView != null) {
                     scrollView.postDelayed(() -> {
                         Rect focusedRect = new Rect();
                         focusedView.getHitRect(focusedRect);
