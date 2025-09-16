@@ -3,7 +3,9 @@ package com.kfir.outfitai;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ScrollView;
+import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -59,6 +61,9 @@ public class MainActivity extends AppCompatActivity {
         View backButton = findViewById(R.id.Back_button);
         backButton.setOnClickListener(v -> showWelcomeScreen());
 
+        View signInButton = findViewById(R.id.SignIn_button);
+        signInButton.setOnClickListener(v -> validateSignIn());
+
         setupKeyboardHandlingForForms();
     }
 
@@ -70,8 +75,76 @@ public class MainActivity extends AppCompatActivity {
         View backButton = findViewById(R.id.Back_button);
         backButton.setOnClickListener(v -> showWelcomeScreen());
 
+        View signUpButton = findViewById(R.id.SignUp_button);
+        signUpButton.setOnClickListener(v -> validateSignUp());
+
         setupKeyboardHandlingForForms();
     }
+
+    private void validateSignIn() {
+        EditText emailOrUsernameInput = findViewById(R.id.UsernameOrEmail_textInput);
+        EditText passwordInput = findViewById(R.id.Password_textInput);
+
+        String emailOrUsername = emailOrUsernameInput.getText().toString().trim();
+        String password = passwordInput.getText().toString().trim();
+
+        // Reset errors
+        emailOrUsernameInput.setError(null);
+        passwordInput.setError(null);
+
+        if (emailOrUsername.isEmpty()) {
+            emailOrUsernameInput.setError("Field can't be empty");
+            return;
+        }
+
+        if (password.isEmpty()) {
+            passwordInput.setError("Field can't be empty");
+            return;
+        }
+
+        Toast.makeText(this, "Sign in successful (test)", Toast.LENGTH_SHORT).show();
+    }
+
+    private void validateSignUp() {
+        EditText emailInput = findViewById(R.id.Email_textInput);
+        EditText passwordInput = findViewById(R.id.Password_textInput);
+        EditText confirmPasswordInput = findViewById(R.id.ConfirmPassword_textInput);
+
+        // remove spaces from input texts
+        String email = emailInput.getText().toString().trim();
+        String password = passwordInput.getText().toString().trim();
+        String confirmPassword = confirmPasswordInput.getText().toString().trim();
+
+        // reset errors
+        emailInput.setError(null);
+        passwordInput.setError(null);
+        confirmPasswordInput.setError(null);
+
+        boolean isValid = true;
+
+        // checks if email contains "@" and "." characters.
+        if (email.isEmpty() || !email.contains("@") || !email.contains(".")) {
+            emailInput.setError("Please enter a valid email address");
+            isValid = false;
+        }
+
+        // checks if the password is at least 8 characters long.
+        if (password.length() < 8) {
+            passwordInput.setError("Password must be at least 8 characters long");
+            isValid = false;
+        }
+
+        // check if Passwords Match
+        if (!password.equals(confirmPassword)) {
+            confirmPasswordInput.setError("Passwords do not match");
+            isValid = false;
+        }
+
+        if (isValid) {
+            Toast.makeText(this, "Sign up successful (test)", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     private void setupKeyboardHandlingForForms() {
         View mainView = findViewById(R.id.main);
