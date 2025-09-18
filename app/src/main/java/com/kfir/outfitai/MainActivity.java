@@ -18,7 +18,8 @@ public class MainActivity extends AppCompatActivity {
         WELCOME,
         SIGN_IN,
         SIGN_UP,
-        GENERATE
+        GENERATE,
+        SETTINGS
     }
 
     private Screen currentScreen = Screen.WELCOME;
@@ -40,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
                     showWelcomeScreen();
                 } else if (currentScreen == Screen.GENERATE) {
                     showWelcomeScreen(); // go back to welcome screen from generate screen
+                } else if (currentScreen == Screen.SETTINGS) {
+                    showGenerateScreen();
                 }
                 else {
                     finish();
@@ -64,6 +67,20 @@ public class MainActivity extends AppCompatActivity {
     private void showGenerateScreen() {
         setContentView(R.layout.generate_screen);
         currentScreen = Screen.GENERATE;
+
+        View settingsButton = findViewById(R.id.settings_button);
+        settingsButton.setOnClickListener(v -> showSettingsScreen());
+    }
+
+    private void showSettingsScreen() {
+        setContentView(R.layout.settings_screen);
+        currentScreen = Screen.SETTINGS;
+
+        View backButton = findViewById(R.id.Back_button);
+        backButton.setOnClickListener(v -> showGenerateScreen());
+
+        View quitButton = findViewById(R.id.Quit_button);
+        quitButton.setOnClickListener(v -> finish());
     }
 
 
