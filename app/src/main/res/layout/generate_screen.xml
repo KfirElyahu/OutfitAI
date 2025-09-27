@@ -50,6 +50,37 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/upload_icon" />
 
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/person_selected_image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="28dp"
+        android:layout_marginBottom="28dp"
+        android:scaleType="fitCenter"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/person_buttonBackground"
+        app:layout_constraintEnd_toEndOf="@+id/person_buttonBackground"
+        app:layout_constraintStart_toStartOf="@+id/person_buttonBackground"
+        app:layout_constraintTop_toTopOf="@+id/person_buttonBackground"
+        app:shapeAppearanceOverlay="@style/roundedImageView" />
+
+    <View
+        android:id="@+id/upload_person_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="28dp"
+        android:layout_marginBottom="28dp"
+        android:background="@android:color/transparent"
+        android:foreground="@drawable/button_ripple"
+        app:layout_constraintBottom_toBottomOf="@+id/person_buttonBackground"
+        app:layout_constraintEnd_toEndOf="@+id/person_buttonBackground"
+        app:layout_constraintStart_toStartOf="@+id/person_buttonBackground"
+        app:layout_constraintTop_toTopOf="@+id/person_buttonBackground" />
+
     <ImageView
         android:id="@+id/clothing_buttonBackground"
         android:layout_width="wrap_content"
@@ -65,20 +96,50 @@
         android:layout_width="180dp"
         android:layout_height="186dp"
         android:layout_marginStart="-10dp"
-        android:layout_marginTop="88dp"
+        android:layout_marginTop="35dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/person_icon"
+        app:layout_constraintTop_toBottomOf="@+id/person_buttonBackground"
         app:srcCompat="@drawable/clothing_icon" />
 
     <ImageView
         android:id="@+id/clothing_uploadIcon"
         android:layout_width="30dp"
         android:layout_height="30dp"
-        android:layout_marginTop="250dp"
+        android:layout_marginTop="210dp"
         app:layout_constraintStart_toEndOf="@+id/clothing_icon"
-        app:layout_constraintTop_toBottomOf="@+id/person_uploadIcon"
+        app:layout_constraintTop_toBottomOf="@+id/person_buttonBackground"
         app:srcCompat="@drawable/upload_icon" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/clothing_selected_image"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="28dp"
+        android:layout_marginBottom="28dp"
+        android:scaleType="fitCenter"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/clothing_buttonBackground"
+        app:layout_constraintEnd_toEndOf="@+id/clothing_buttonBackground"
+        app:layout_constraintStart_toStartOf="@+id/clothing_buttonBackground"
+        app:layout_constraintTop_toTopOf="@+id/clothing_buttonBackground"
+        app:shapeAppearanceOverlay="@style/roundedImageView" />
+
+    <View
+        android:id="@+id/upload_clothing_button"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="20dp"
+        android:background="@android:color/transparent"
+        android:foreground="@drawable/button_ripple"
+        app:layout_constraintBottom_toBottomOf="@+id/clothing_buttonBackground"
+        app:layout_constraintEnd_toEndOf="@+id/clothing_buttonBackground"
+        app:layout_constraintStart_toStartOf="@+id/clothing_buttonBackground"
+        app:layout_constraintTop_toTopOf="@+id/clothing_buttonBackground" />
+
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/generate_button"

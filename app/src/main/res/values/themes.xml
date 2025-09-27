@@ -2,4 +2,8 @@
     <style name="Base.Theme.OutfitAI" parent="Theme.Material3.DayNight.NoActionBar">
     </style>
     <style name="Theme.OutfitAI" parent="Base.Theme.OutfitAI" />
+    <style name="roundedImageView">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">15dp</item>
+    </style>
 </resources>
