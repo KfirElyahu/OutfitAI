@@ -1,5 +1,19 @@
 package com.kfir.outfitai;
 
+import com.google.common.collect.ImmutableList;
+import com.google.genai.Client;
+import com.google.genai.types.Blob;
+import com.google.genai.types.Content;
+import com.google.genai.types.GenerateContentResponse;
+import com.google.genai.types.Part;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.widget.ProgressBar;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -46,6 +60,10 @@ public class MainActivity extends AppCompatActivity {
     private ActivityResultLauncher<PickVisualMediaRequest> pickMediaLauncher;
     private ActivityResultLauncher<Uri> takePictureLauncher;
     private Uri tempImageUri;
+
+    private Uri selectedPersonUri;
+    private Uri selectedClothingUri;
+    private final Executor executor = Executors.newSingleThreadExecutor();
 
     private enum ImageTarget {
         PERSON, CLOTHING
@@ -119,6 +137,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.generate_screen);
         currentScreen = Screen.GENERATE;
 
+        // Reset stored URIs when showing the screen
+        selectedPersonUri = null;
+        selectedClothingUri = null;
+
         View settingsButton = findViewById(R.id.settings_button);
         settingsButton.setOnClickListener(v -> showSettingsScreen());
 
@@ -133,6 +155,9 @@ public class MainActivity extends AppCompatActivity {
             currentImageTarget = ImageTarget.CLOTHING;
             showImagePickerDialog();
         });
+
+        View generateButton = findViewById(R.id.generate_button);
+        generateButton.setOnClickListener(v -> generateOutfit());
     }
 
     private void showImagePickerDialog() {
@@ -154,14 +179,123 @@ public class MainActivity extends AppCompatActivity {
         builder.show();
     }
 
+    private void generateOutfit() {
+        if (selectedPersonUri == null || selectedClothingUri == null) {
+            Toast.makeText(this, "Please select both a person and clothing image", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ProgressBar loadingIndicator = findViewById(R.id.loading_indicator);
+        View generateButton = findViewById(R.id.generate_button);
+
+        // Show loading, hide button
+        loadingIndicator.setVisibility(View.VISIBLE);
+        generateButton.setEnabled(false);
+
+        // Execute in background
+        executor.execute(() -> {
+            try {
+                byte[] result = callGeminiAPI(selectedPersonUri, selectedClothingUri);
+
+                runOnUiThread(() -> {
+                    if (result != null) {
+                        displayResult(result);
+                    } else {
+                        Toast.makeText(this, "Failed to generate outfit", Toast.LENGTH_SHORT).show();
+                    }
+                    loadingIndicator.setVisibility(View.GONE);
+                    generateButton.setEnabled(true);
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    loadingIndicator.setVisibility(View.GONE);
+                    generateButton.setEnabled(true);
+                });
+            }
+        });
+    }
+
+    private byte[] callGeminiAPI(Uri personUri, Uri clothingUri) {
+        final String prompt = "Replace the outfit on the person in the first uploaded image with the exact clothing shown in the second uploaded image. Extract only the clothes from the second image, ignoring any person, background, or other elements in it. Precisely match the style, color, texture, patterns, and details of the clothes while preserving the original pose, body shape, facial features, expression, skin tone, hair, accessories (unless part of the outfit), lighting, shadows, background, and overall composition from the first image. Adjust the new clothes to fit naturally on the subject's body with realistic folds, wrinkles, and draping. Output a high-resolution, photorealistic edited image in the same aspect ratio as the first image.";
+
+        try (Client client = new Client.Builder()
+                .apiKey(ApiConfig.GEMINI_API_KEY)
+                .build()) {
+
+            byte[] personImageBytes = getBytesFromUri(personUri);
+            byte[] clothingImageBytes = getBytesFromUri(clothingUri);
+
+            Part textPart = Part.fromText(prompt);
+            Part personImagePart = Part.fromBytes(personImageBytes, "image/jpeg");
+            Part clothingImagePart = Part.fromBytes(clothingImageBytes, "image/jpeg");
+
+            Content content = Content.fromParts(textPart, personImagePart, clothingImagePart);
+
+            GenerateContentResponse response = client.models.generateContent(
+                    "gemini-2.5-flash-image-preview",
+                    content,
+                    null);
+
+            ImmutableList<Part> parts = response.parts();
+
+            if (parts != null) {
+                for (Part part : parts) {
+                    if (part.inlineData().isPresent()) {
+                        Blob blob = part.inlineData().get();
+                        if (blob.data().isPresent()) {
+                            return blob.data().get();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private byte[] getBytesFromUri(Uri uri) throws IOException {
+        try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
+            ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+            int bufferSize = 1024;
+            byte[] buffer = new byte[bufferSize];
+
+            int len;
+            while ((len = inputStream.read(buffer)) != -1) {
+                byteBuffer.write(buffer, 0, len);
+            }
+
+            return byteBuffer.toByteArray();
+        }
+    }
+
+    private void displayResult(byte[] imageData) {
+        Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+        ImageView resultImage = findViewById(R.id.result_image);
+
+        if (bitmap != null) {
+            resultImage.setImageBitmap(bitmap);
+            resultImage.setVisibility(View.VISIBLE);
+
+            ScrollView scrollView = findViewById(R.id.scrollView);
+            if (scrollView != null) {
+                scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
+            }
+        } else {
+            Toast.makeText(this, "Failed to decode generated image", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void checkCameraPermissionAndOpenCamera() {
-        // First, check if the device has a camera feature
+        // check if the device has a camera feature
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
             Toast.makeText(this, "No camera found on this device", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // If camera hardware exists, check for permission
+        // if camera hardware exists, check for permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             // if permission is not granted request it
@@ -176,7 +310,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void openCamera() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        // This check is now more reliable due to the <queries> tag in the manifest
         if (cameraIntent.resolveActivity(getPackageManager()) == null) {
             Toast.makeText(this, "No camera app found on this device", Toast.LENGTH_SHORT).show();
             return;
@@ -215,6 +348,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void displaySelectedImage(Uri imageUri) {
         if (currentImageTarget == ImageTarget.PERSON) {
+            selectedPersonUri = imageUri;
             ImageView personSelectedImage = findViewById(R.id.person_selected_image);
             ImageView personIcon = findViewById(R.id.person_icon);
             ImageView personUploadIcon = findViewById(R.id.person_uploadIcon);
@@ -225,6 +359,7 @@ public class MainActivity extends AppCompatActivity {
             personUploadIcon.setVisibility(View.GONE);
 
         } else if (currentImageTarget == ImageTarget.CLOTHING) {
+            selectedClothingUri = imageUri;
             ImageView clothingSelectedImage = findViewById(R.id.clothing_selected_image);
             ImageView clothingIcon = findViewById(R.id.clothing_icon);
             ImageView clothingUploadIcon = findViewById(R.id.clothing_uploadIcon);

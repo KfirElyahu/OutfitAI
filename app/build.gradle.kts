@@ -6,9 +6,14 @@ android {
     namespace = "com.kfir.outfitai"
     compileSdk = 36
 
+    packaging {
+        resources.excludes.add("META-INF/INDEX.LIST")
+        resources.excludes.add("META-INF/DEPENDENCIES")
+    }
+
     defaultConfig {
         applicationId = "com.kfir.outfitai"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -24,15 +29,20 @@ android {
                 "proguard-rules.pro"
             )
         }
+
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
-
+    implementation("com.google.genai:google-genai:1.17.0")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
