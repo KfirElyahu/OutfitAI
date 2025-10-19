@@ -42,7 +42,9 @@ android {
 }
 
 dependencies {
-    implementation("com.google.genai:google-genai:1.17.0")
+    implementation("io.getstream:photoview-dialog:1.0.3")
+    implementation("com.github.bumptech.glide:glide:5.0.5")
+    implementation("com.google.genai:google-genai:1.23.0")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)

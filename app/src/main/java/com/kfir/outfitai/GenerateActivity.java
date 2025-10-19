@@ -1,14 +1,19 @@
 package com.kfir.outfitai;
 
 import android.Manifest;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
@@ -24,6 +29,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
+import com.bumptech.glide.Glide;
 import com.google.common.collect.ImmutableList;
 import com.google.genai.Client;
 import com.google.genai.types.Blob;
@@ -33,10 +39,15 @@ import com.google.genai.types.Part;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import io.getstream.photoview.dialog.PhotoViewDialog;
 
 public class GenerateActivity extends AppCompatActivity {
 
@@ -46,6 +57,8 @@ public class GenerateActivity extends AppCompatActivity {
 
     private Uri selectedPersonUri;
     private Uri selectedClothingUri;
+    private Uri generatedImageUri; // To store the URI of the generated image
+
     private final Executor executor = Executors.newSingleThreadExecutor();
 
     private enum ImageTarget {
@@ -54,6 +67,7 @@ public class GenerateActivity extends AppCompatActivity {
     private ImageTarget currentImageTarget;
 
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1001;
+    private static final int WRITE_STORAGE_PERMISSION_REQUEST_CODE = 1002;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +96,14 @@ public class GenerateActivity extends AppCompatActivity {
 
         View generateButton = findViewById(R.id.generate_button);
         generateButton.setOnClickListener(v -> generateOutfit());
+
+        // Set OnClickListener for the result image
+        ImageView resultImage = findViewById(R.id.result_image);
+        resultImage.setOnClickListener(v -> {
+            if (generatedImageUri != null) {
+                showGeneratedImageDialog();
+            }
+        });
     }
 
     private void setupActivityLaunchers() {
@@ -215,6 +237,12 @@ public class GenerateActivity extends AppCompatActivity {
         ImageView resultImage = findViewById(R.id.result_image);
 
         if (bitmap != null) {
+            generatedImageUri = saveBitmapToCacheAndGetUri(bitmap);
+            if (generatedImageUri == null) {
+                Toast.makeText(this, "Failed to cache generated image", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             resultImage.setImageBitmap(bitmap);
             resultImage.setVisibility(View.VISIBLE);
 
@@ -224,6 +252,113 @@ public class GenerateActivity extends AppCompatActivity {
             }
         } else {
             Toast.makeText(this, "Failed to decode generated image", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showGeneratedImageDialog() {
+        View overlayView = getLayoutInflater().inflate(R.layout.view_image_overlay, null);
+
+        final PhotoViewDialog.Builder<Uri> builder = new PhotoViewDialog.Builder<>(
+                this,
+                Collections.singletonList(generatedImageUri),
+                (imageView, uri) -> Glide.with(GenerateActivity.this).load(uri).into(imageView)
+        );
+
+        builder.withOverlayView(overlayView);
+        final PhotoViewDialog<Uri> dialog = builder.build();
+
+        ImageButton backButton = overlayView.findViewById(R.id.button_back);
+        backButton.setOnClickListener(v -> dialog.dismiss());
+
+        ImageButton saveButton = overlayView.findViewById(R.id.button_save);
+        saveButton.setOnClickListener(v -> checkStoragePermissionAndSave());
+
+        dialog.show();
+    }
+
+    private void checkStoragePermissionAndSave() {
+        if (generatedImageUri == null) {
+            Toast.makeText(this, "No image to save", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        WRITE_STORAGE_PERMISSION_REQUEST_CODE);
+            } else {
+                saveImageToGallery(generatedImageUri);
+            }
+        } else {
+            saveImageToGallery(generatedImageUri);
+        }
+    }
+
+    private void saveImageToGallery(Uri imageUri) {
+        String fileName = "OutfitAI_" + System.currentTimeMillis() + ".jpg";
+        ContentResolver resolver = getContentResolver();
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        values.put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000);
+
+        Uri collection;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "OutfitAI");
+            values.put(MediaStore.Images.Media.IS_PENDING, 1);
+            collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        } else {
+            File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "OutfitAI");
+            if (!directory.exists() && !directory.mkdirs()) {
+                Toast.makeText(this, "Failed to create directory", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            File file = new File(directory, fileName);
+            values.put(MediaStore.Images.Media.DATA, file.getAbsolutePath());
+            collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        }
+
+        Uri itemUri = null;
+        try {
+            itemUri = resolver.insert(collection, values);
+            if (itemUri == null) throw new IOException("Failed to create new MediaStore record.");
+
+            try (OutputStream os = resolver.openOutputStream(itemUri);
+                 InputStream is = getContentResolver().openInputStream(imageUri)) {
+                if (os == null || is == null) throw new IOException("Failed to open streams.");
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = is.read(buffer)) != -1) {
+                    os.write(buffer, 0, len);
+                }
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                values.clear();
+                values.put(MediaStore.Images.Media.IS_PENDING, 0);
+                resolver.update(itemUri, values, null, null);
+            }
+
+            Toast.makeText(this, "Image saved to Gallery", Toast.LENGTH_SHORT).show();
+        } catch (IOException e) {
+            if (itemUri != null) {
+                resolver.delete(itemUri, null, null);
+            }
+            e.printStackTrace();
+            Toast.makeText(this, "Failed to save image", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private Uri saveBitmapToCacheAndGetUri(Bitmap bitmap) {
+        File imageFile = new File(getCacheDir(), "generated_outfit_" + System.currentTimeMillis() + ".jpg");
+        try (FileOutputStream out = new FileOutputStream(imageFile)) {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
+            return FileProvider.getUriForFile(this, getPackageName() + ".provider", imageFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -268,6 +403,14 @@ public class GenerateActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Camera permission is required to take photos",
                         Toast.LENGTH_SHORT).show();
+            }
+        } else if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (generatedImageUri != null) {
+                    saveImageToGallery(generatedImageUri);
+                }
+            } else {
+                Toast.makeText(this, "Storage permission is required to save images", Toast.LENGTH_SHORT).show();
             }
         }
     }
