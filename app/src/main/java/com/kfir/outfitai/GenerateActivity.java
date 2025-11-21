@@ -180,8 +180,7 @@ public class GenerateActivity extends AppCompatActivity {
     }
 
     private byte[] callGeminiAPI(String apiKey, Uri personUri, Uri clothingUri) {
-        final String prompt = "Replace the outfit on the person in the first uploaded image with the exact clothing shown in the second uploaded image. Extract only the clothes from the second image, ignoring any person, background, or other elements in it. Precisely match the style, color, texture, patterns, and details of the clothes while preserving the original pose, body shape, facial features, expression, skin tone, hair, accessories (unless part of the outfit), lighting, shadows, background, and overall composition from the first image. Adjust the new clothes to fit naturally on the subject's body with realistic folds, wrinkles, and draping. Output a high-resolution, photorealistic edited image in the same aspect ratio as the first image.";
-
+        final String prompt = "Strictly preserve the identity, face, body shape, pose, and background of the subject in the first image while replacing their attire by extracting only the clothing garments, textures, and patterns visible in the second image—regardless of whether the source clothes are worn by another person or a flat lay—and apply them to the first subject with photorealistic draping, lighting consistency, and accurate fabric physics.";
         try (Client client = new Client.Builder()
                 .apiKey(apiKey)
                 .build()) {
