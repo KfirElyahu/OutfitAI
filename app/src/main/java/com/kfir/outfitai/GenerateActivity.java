@@ -17,6 +17,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -44,6 +45,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collections;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -68,6 +71,16 @@ public class GenerateActivity extends AppCompatActivity {
 
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1001;
     private static final int WRITE_STORAGE_PERMISSION_REQUEST_CODE = 1002;
+
+    private View loadingOverlay;
+    private ProgressBar progressBar;
+    private TextView loadingPercentageText;
+    private TextView loadingTimerText;
+    private TextView loadingStageText;
+
+    private Timer progressTimer;
+    private long startTimeMillis;
+    private int currentProgress = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +117,12 @@ public class GenerateActivity extends AppCompatActivity {
                 showGeneratedImageDialog();
             }
         });
+
+        loadingOverlay = findViewById(R.id.loading_overlay);
+        progressBar = findViewById(R.id.loading_progress_bar);
+        loadingPercentageText = findViewById(R.id.loading_percentage);
+        loadingTimerText = findViewById(R.id.loading_timer);
+        loadingStageText = findViewById(R.id.loading_stage_text);
     }
 
     private void setupActivityLaunchers() {
@@ -148,39 +167,86 @@ public class GenerateActivity extends AppCompatActivity {
             return;
         }
 
-        ProgressBar loadingIndicator = findViewById(R.id.loading_indicator);
-        View generateButton = findViewById(R.id.generate_button);
+        startLoadingAnimation();
 
-        loadingIndicator.setVisibility(View.VISIBLE);
+        View generateButton = findViewById(R.id.generate_button);
         generateButton.setEnabled(false);
 
         executor.execute(() -> {
             try {
                 final String apiKey = ApiConfig.GEMINI_API_KEY;
 
+                runOnUiThread(() -> loadingStageText.setText("AI is designing outfit..."));
+
                 byte[] result = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri);
 
                 runOnUiThread(() -> {
+                    stopLoadingAnimation();
+
                     if (result != null) {
                         displayResult(result);
                     } else {
                         Toast.makeText(this, "Failed to generate outfit", Toast.LENGTH_SHORT).show();
                     }
-                    loadingIndicator.setVisibility(View.GONE);
                     generateButton.setEnabled(true);
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> {
+                    stopLoadingAnimation();
                     Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    loadingIndicator.setVisibility(View.GONE);
                     generateButton.setEnabled(true);
                 });
             }
         });
     }
 
+    private void startLoadingAnimation() {
+        loadingOverlay.setVisibility(View.VISIBLE);
+        currentProgress = 0;
+        startTimeMillis = System.currentTimeMillis();
+        progressBar.setProgress(0);
+        loadingStageText.setText("Preparing images...");
+
+        progressTimer = new Timer();
+        progressTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(() -> updateProgressUI());
+            }
+        }, 0, 100); // Update every 100ms
+    }
+
+    private void updateProgressUI() {
+        long elapsedMillis = System.currentTimeMillis() - startTimeMillis;
+
+        long seconds = elapsedMillis / 1000;
+        long minutes = seconds / 60;
+        seconds = seconds % 60;
+        loadingTimerText.setText(String.format("%02d:%02d", minutes, seconds));
+
+        if (currentProgress < 20) {
+            currentProgress += 2;
+        } else if (currentProgress < 60) {
+            loadingStageText.setText("We are designing your outfit...");
+            if (elapsedMillis % 200 < 100) currentProgress += 1;
+        } else if (currentProgress < 90) {
+            loadingStageText.setText("Still working on it..");
+            if (elapsedMillis % 500 < 100) currentProgress += 1;
+        }
+        progressBar.setProgress(currentProgress);
+        loadingPercentageText.setText(currentProgress + "%");
+    }
+
+    private void stopLoadingAnimation() {
+        if (progressTimer != null) {
+            progressTimer.cancel();
+            progressTimer = null;
+        }
+        loadingOverlay.setVisibility(View.GONE);
+    }
+
     private byte[] callGeminiAPI(String apiKey, Uri personUri, Uri clothingUri) {
-        final String prompt = "Strictly preserve the identity, face, body shape, pose, and background of the subject in the first image while replacing their attire by extracting only the clothing garments, textures, and patterns visible in the second image—regardless of whether the source clothes are worn by another person or a flat lay—and apply them to the first subject with photorealistic draping, lighting consistency, and accurate fabric physics.";
+        final String prompt = "Exact face, hair, skin tone, facial expression, eye direction, mouth shape, body proportions, pose, hand positions, fingers, background and lighting from the first image only - do not change anything else; completely remove every piece of existing clothing and replace the entire outfit (top, bottom, underwear, outerwear, dress, shoes, socks, belts, bags, jewelry, hats, glasses, every accessory) with the exact clothes worn/shown in the second image - if the second image contains a person, ignore their entire body and face and extract only their clothing items with their precise cut, fit, fabric behavior, wrinkles, patterns, colors and details; apply the full new outfit to the person from the first image even on body parts that are hidden or barely visible in the first image by intelligently inferring and generating the missing areas for perfect coverage and natural fit, ultra-realistic fabric physics, correct shadows and highlights, high resolution, no artifacts, no blending with original clothes whatsoever.";
         try (Client client = new Client.Builder()
                 .apiKey(apiKey)
                 .build()) {
