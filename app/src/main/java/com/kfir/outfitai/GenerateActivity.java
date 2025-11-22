@@ -1,9 +1,10 @@
 package com.kfir.outfitai;
 
 import android.Manifest;
-import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -26,6 +27,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -38,6 +40,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.FitCenter;
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.google.common.collect.ImmutableList;
 import com.google.genai.Client;
 import com.google.genai.types.Blob;
@@ -55,9 +59,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -76,16 +78,18 @@ public class GenerateActivity extends AppCompatActivity {
     private Uri selectedClothingUri;
     private Uri generatedImageUri;
     private List<Uri> generatedGridUris = new ArrayList<>();
+    private Uri currentVisibleDialogUri;
 
     private final Executor executor = Executors.newSingleThreadExecutor();
+    private HelperUserDB dbHelper;
+    private SessionManager sessionManager;
+    private String currentUserEmail;
+    private SharedPreferences userPrefs;
 
-    private enum ImageTarget {
-        PERSON, CLOTHING
-    }
+    private enum ImageTarget { PERSON, CLOTHING }
     private ImageTarget currentImageTarget;
 
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1001;
-    private static final int WRITE_STORAGE_PERMISSION_REQUEST_CODE = 1002;
 
     private View loadingOverlay;
     private ProgressBar progressBar;
@@ -107,12 +111,36 @@ public class GenerateActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.generate_screen);
 
+        dbHelper = new HelperUserDB(this);
+
+        sessionManager = new SessionManager(this);
+        if (!sessionManager.isLoggedIn()) {
+            startActivity(new Intent(this, WelcomeActivity.class));
+            finish();
+            return;
+        }
+        currentUserEmail = sessionManager.getCurrentUserEmail();
+        userPrefs = getSharedPreferences("Prefs_" + currentUserEmail, Context.MODE_PRIVATE);
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                moveTaskToBack(true);
+            }
+        });
+
         setupActivityLaunchers();
         loadPrompts();
 
         View settingsButton = findViewById(R.id.settings_button);
         settingsButton.setOnClickListener(v -> {
             Intent intent = new Intent(GenerateActivity.this, SettingsActivity.class);
+            startActivity(intent);
+        });
+
+        View historyButton = findViewById(R.id.history_button);
+        historyButton.setOnClickListener(v -> {
+            Intent intent = new Intent(GenerateActivity.this, HistoryActivity.class);
             startActivity(intent);
         });
 
@@ -136,8 +164,8 @@ public class GenerateActivity extends AppCompatActivity {
 
         ImageView resultImage = findViewById(R.id.result_image);
         resultImage.setOnClickListener(v -> {
-            if (generatedImageUri != null) {
-                showGeneratedImageDialog(generatedImageUri);
+            if (!generatedGridUris.isEmpty()) {
+                showGeneratedImageDialog(0);
             }
         });
 
@@ -153,7 +181,8 @@ public class GenerateActivity extends AppCompatActivity {
     private void setupActivityLaunchers() {
         pickMediaLauncher = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
             if (uri != null) {
-                displaySelectedImage(uri);
+                Uri persistentUri = saveUriToInternalStorage(uri);
+                displaySelectedImage(persistentUri);
             } else {
                 Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show();
             }
@@ -161,11 +190,37 @@ public class GenerateActivity extends AppCompatActivity {
 
         takePictureLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
             if (success) {
-                displaySelectedImage(tempImageUri);
+                Uri persistentUri = saveUriToInternalStorage(tempImageUri);
+                displaySelectedImage(persistentUri);
             } else {
                 Toast.makeText(this, "Failed to capture image", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private Uri saveUriToInternalStorage(Uri sourceUri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(sourceUri);
+            File historyDir = new File(getFilesDir(), "history_images");
+            if (!historyDir.exists()) historyDir.mkdirs();
+
+            String fileName = "hist_" + System.currentTimeMillis() + ".jpg";
+            File destFile = new File(historyDir, fileName);
+
+            FileOutputStream fos = new FileOutputStream(destFile);
+            byte[] buffer = new byte[4096];
+            int length;
+            while ((length = inputStream.read(buffer)) > 0) {
+                fos.write(buffer, 0, length);
+            }
+            fos.close();
+            inputStream.close();
+
+            return Uri.fromFile(destFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return sourceUri;
+        }
     }
 
     private void showImagePickerDialog() {
@@ -173,12 +228,12 @@ public class GenerateActivity extends AppCompatActivity {
         builder.setTitle("Choose Image Source");
         builder.setItems(new CharSequence[]{"Gallery", "Camera"}, (dialog, which) -> {
             switch (which) {
-                case 0: // Gallery
+                case 0:
                     pickMediaLauncher.launch(new PickVisualMediaRequest.Builder()
                             .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
                             .build());
                     break;
-                case 1: // Camera
+                case 1:
                     checkCameraPermissionAndOpenCamera();
                     break;
             }
@@ -192,7 +247,7 @@ public class GenerateActivity extends AppCompatActivity {
             final int index = i;
             findViewById(gridIds[i]).setOnClickListener(v -> {
                 if (index < generatedGridUris.size()) {
-                    showGeneratedImageDialog(generatedGridUris.get(index));
+                    showGeneratedImageDialog(index);
                 }
             });
         }
@@ -216,20 +271,20 @@ public class GenerateActivity extends AppCompatActivity {
             }
         } catch (IOException | JSONException e) {
             e.printStackTrace();
-            Toast.makeText(this, "Error loading prompts", Toast.LENGTH_SHORT).show();
-            // Fallback prompt
             availablePrompts.add("Default: Apply outfit from second image to person in first image.");
         }
 
-        // Set default prompt
-        if (!availablePrompts.isEmpty()) {
+        int savedIndex = userPrefs.getInt("last_prompt_index", 0);
+        if (savedIndex >= 0 && savedIndex < availablePrompts.size()) {
+            selectedPromptIndex = savedIndex;
+            currentPrompt = availablePrompts.get(savedIndex);
+        } else if (!availablePrompts.isEmpty()) {
             currentPrompt = availablePrompts.get(0);
         }
     }
 
     private void showPromptSelectionDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-
         ListView listView = new ListView(this);
 
         TextView tryAllButton = new TextView(this);
@@ -288,6 +343,9 @@ public class GenerateActivity extends AppCompatActivity {
                 selectedPromptIndex = promptIndex;
                 currentPrompt = availablePrompts.get(promptIndex);
                 isTryAllMode = false;
+
+                userPrefs.edit().putInt("last_prompt_index", selectedPromptIndex).apply();
+
                 Toast.makeText(GenerateActivity.this, "Selected: Prompt " + (promptIndex + 1), Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             }
@@ -303,11 +361,9 @@ public class GenerateActivity extends AppCompatActivity {
         }
 
         startLoadingAnimation();
-
         View generateButton = findViewById(R.id.generate_button);
         generateButton.setEnabled(false);
 
-        // Reset previous results views
         findViewById(R.id.result_image).setVisibility(View.GONE);
         findViewById(R.id.result_grid_container).setVisibility(View.GONE);
 
@@ -316,9 +372,8 @@ public class GenerateActivity extends AppCompatActivity {
                 final String apiKey = ApiConfig.GEMINI_API_KEY;
 
                 if (isTryAllMode) {
-                    // Generate multiple images
                     List<Bitmap> results = new ArrayList<>();
-                    int limit = Math.min(availablePrompts.size(), 4); // Max 4 images
+                    int limit = Math.min(availablePrompts.size(), 4);
 
                     for (int i = 0; i < limit; i++) {
                         final int currentIdx = i;
@@ -327,9 +382,7 @@ public class GenerateActivity extends AppCompatActivity {
                         byte[] resultBytes = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri, availablePrompts.get(i));
                         if (resultBytes != null) {
                             Bitmap bitmap = BitmapFactory.decodeByteArray(resultBytes, 0, resultBytes.length);
-                            if (bitmap != null) {
-                                results.add(bitmap);
-                            }
+                            if (bitmap != null) results.add(bitmap);
                         }
                     }
 
@@ -337,6 +390,7 @@ public class GenerateActivity extends AppCompatActivity {
                         stopLoadingAnimation();
                         if (!results.isEmpty()) {
                             displayGridResults(results);
+                            saveToHistory(generatedGridUris);
                         } else {
                             Toast.makeText(this, "Failed to generate outfits", Toast.LENGTH_SHORT).show();
                         }
@@ -344,15 +398,16 @@ public class GenerateActivity extends AppCompatActivity {
                     });
 
                 } else {
-                    // Generate single image
                     runOnUiThread(() -> loadingStageText.setText("AI is designing outfit..."));
-
                     byte[] result = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri, currentPrompt);
 
                     runOnUiThread(() -> {
                         stopLoadingAnimation();
                         if (result != null) {
                             displayResult(result);
+                            List<Uri> uris = new ArrayList<>();
+                            uris.add(generatedImageUri);
+                            saveToHistory(uris);
                         } else {
                             Toast.makeText(this, "Failed to generate outfit", Toast.LENGTH_SHORT).show();
                         }
@@ -370,6 +425,23 @@ public class GenerateActivity extends AppCompatActivity {
         });
     }
 
+    private void saveToHistory(List<Uri> resultUris) {
+        if(resultUris == null || resultUris.isEmpty()) return;
+
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < resultUris.size(); i++) {
+            sb.append(resultUris.get(i).toString());
+            if(i < resultUris.size() - 1) sb.append(",");
+        }
+
+        HistoryItem item = new HistoryItem(
+                selectedPersonUri.toString(),
+                selectedClothingUri.toString(),
+                sb.toString()
+        );
+        dbHelper.addHistoryItem(item, currentUserEmail);
+    }
+
     private void startLoadingAnimation() {
         loadingOverlay.setVisibility(View.VISIBLE);
         currentProgress = 0;
@@ -383,12 +455,11 @@ public class GenerateActivity extends AppCompatActivity {
             public void run() {
                 runOnUiThread(() -> updateProgressUI());
             }
-        }, 0, 100); // Update every 100ms
+        }, 0, 100);
     }
 
     private void updateProgressUI() {
         long elapsedMillis = System.currentTimeMillis() - startTimeMillis;
-
         long seconds = elapsedMillis / 1000;
         long minutes = seconds / 60;
         seconds = seconds % 60;
@@ -397,14 +468,10 @@ public class GenerateActivity extends AppCompatActivity {
         if (currentProgress < 20) {
             currentProgress += 2;
         } else if (currentProgress < 85) {
-            // Slow down progression
             if (elapsedMillis % 200 < 100) currentProgress += 1;
         }
 
-        // Specific text updates based on mode
-        if (isTryAllMode && currentProgress > 30 && currentProgress < 90) {
-            // The specific text is updated in the generate loop
-        } else if (!isTryAllMode) {
+        if (!isTryAllMode) {
             if (currentProgress > 30 && currentProgress < 60) {
                 loadingStageText.setText("We are designing your outfit...");
             } else if (currentProgress >= 60 && currentProgress < 90) {
@@ -425,10 +492,7 @@ public class GenerateActivity extends AppCompatActivity {
     }
 
     private byte[] callGeminiAPI(String apiKey, Uri personUri, Uri clothingUri, String prompt) {
-        try (Client client = new Client.Builder()
-                .apiKey(apiKey)
-                .build()) {
-
+        try (Client client = new Client.Builder().apiKey(apiKey).build()) {
             byte[] personImageBytes = getBytesFromUri(personUri);
             byte[] clothingImageBytes = getBytesFromUri(clothingUri);
 
@@ -444,14 +508,11 @@ public class GenerateActivity extends AppCompatActivity {
                     null);
 
             ImmutableList<Part> parts = response.parts();
-
             if (parts != null) {
                 for (Part part : parts) {
                     if (part.inlineData().isPresent()) {
                         Blob blob = part.inlineData().get();
-                        if (blob.data().isPresent()) {
-                            return blob.data().get();
-                        }
+                        if (blob.data().isPresent()) return blob.data().get();
                     }
                 }
             }
@@ -466,7 +527,6 @@ public class GenerateActivity extends AppCompatActivity {
             ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
             int bufferSize = 1024;
             byte[] buffer = new byte[bufferSize];
-
             int len;
             while ((len = inputStream.read(buffer)) != -1) {
                 byteBuffer.write(buffer, 0, len);
@@ -475,11 +535,12 @@ public class GenerateActivity extends AppCompatActivity {
         }
     }
 
-    // Display Single Result
     private void displayResult(byte[] imageData) {
         Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
         ImageView resultImage = findViewById(R.id.result_image);
         GridLayout gridLayout = findViewById(R.id.result_grid_container);
+
+        generatedGridUris.clear();
 
         if (bitmap != null) {
             generatedImageUri = saveBitmapToCacheAndGetUri(bitmap);
@@ -487,10 +548,17 @@ public class GenerateActivity extends AppCompatActivity {
                 Toast.makeText(this, "Failed to cache generated image", Toast.LENGTH_SHORT).show();
                 return;
             }
+            generatedGridUris.add(generatedImageUri);
 
-            gridLayout.setVisibility(View.GONE); // Hide grid
-            resultImage.setImageBitmap(bitmap);
-            resultImage.setVisibility(View.VISIBLE); // Show single image
+            gridLayout.setVisibility(View.GONE);
+
+            int radius = (int) (15 * getResources().getDisplayMetrics().density);
+            Glide.with(this)
+                    .load(generatedImageUri)
+                    .transform(new FitCenter(), new RoundedCorners(radius))
+                    .into(resultImage);
+
+            resultImage.setVisibility(View.VISIBLE);
 
             ScrollView scrollView = findViewById(R.id.scrollView);
             if (scrollView != null) {
@@ -501,20 +569,14 @@ public class GenerateActivity extends AppCompatActivity {
         }
     }
 
-    // Display Grid Results
     private void displayGridResults(List<Bitmap> bitmaps) {
         ImageView resultImage = findViewById(R.id.result_image);
         GridLayout gridLayout = findViewById(R.id.result_grid_container);
 
         generatedGridUris.clear();
 
-        // Ids of the images in the grid xml
         int[] gridIds = {R.id.grid_image_1, R.id.grid_image_2, R.id.grid_image_3, R.id.grid_image_4};
-
-        // Hide all first
-        for(int id : gridIds) {
-            findViewById(id).setVisibility(View.GONE);
-        }
+        for(int id : gridIds) findViewById(id).setVisibility(View.GONE);
 
         for (int i = 0; i < bitmaps.size() && i < gridIds.length; i++) {
             Bitmap bitmap = bitmaps.get(i);
@@ -527,8 +589,8 @@ public class GenerateActivity extends AppCompatActivity {
             }
         }
 
-        resultImage.setVisibility(View.GONE); // Hide single image
-        gridLayout.setVisibility(View.VISIBLE); // Show grid
+        resultImage.setVisibility(View.GONE);
+        gridLayout.setVisibility(View.VISIBLE);
 
         ScrollView scrollView = findViewById(R.id.scrollView);
         if (scrollView != null) {
@@ -536,106 +598,32 @@ public class GenerateActivity extends AppCompatActivity {
         }
     }
 
-    private void showGeneratedImageDialog(Uri imageUriToDisplay) {
+    private void showGeneratedImageDialog(int startIndex) {
+        if (generatedGridUris.isEmpty()) return;
+
+        currentVisibleDialogUri = generatedGridUris.get(startIndex);
+
         View overlayView = getLayoutInflater().inflate(R.layout.view_image_overlay, null);
 
         final PhotoViewDialog.Builder<Uri> builder = new PhotoViewDialog.Builder<>(
                 this,
-                Collections.singletonList(imageUriToDisplay),
+                generatedGridUris,
                 (imageView, uri) -> Glide.with(GenerateActivity.this).load(uri).into(imageView)
         );
 
+        builder.withStartPosition(startIndex);
         builder.withOverlayView(overlayView);
+        builder.withImageChangeListener(position -> currentVisibleDialogUri = generatedGridUris.get(position));
+
         final PhotoViewDialog<Uri> dialog = builder.build();
 
         ImageButton backButton = overlayView.findViewById(R.id.button_back);
         backButton.setOnClickListener(v -> dialog.dismiss());
 
         ImageButton saveButton = overlayView.findViewById(R.id.button_save);
-        saveButton.setOnClickListener(v -> checkStoragePermissionAndSave(imageUriToDisplay));
+        saveButton.setOnClickListener(v -> ImageSaveHelper.checkPermissionAndSave(GenerateActivity.this, currentVisibleDialogUri));
 
         dialog.show();
-    }
-
-    private void checkStoragePermissionAndSave(Uri uriToSave) {
-        if (uriToSave == null) {
-            Toast.makeText(this, "No image to save", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        generatedImageUri = uriToSave;
-
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        WRITE_STORAGE_PERMISSION_REQUEST_CODE);
-            } else {
-                saveImageToGallery(uriToSave);
-            }
-        } else {
-            saveImageToGallery(uriToSave);
-        }
-    }
-
-    private void checkStoragePermissionAndSave() {
-        checkStoragePermissionAndSave(generatedImageUri);
-    }
-
-    private void saveImageToGallery(Uri imageUri) {
-        String fileName = "OutfitAI_" + System.currentTimeMillis() + ".jpg";
-        ContentResolver resolver = getContentResolver();
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
-        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        values.put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000);
-
-        Uri collection;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "OutfitAI");
-            values.put(MediaStore.Images.Media.IS_PENDING, 1);
-            collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-        } else {
-            File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "OutfitAI");
-            if (!directory.exists() && !directory.mkdirs()) {
-                Toast.makeText(this, "Failed to create directory", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            File file = new File(directory, fileName);
-            values.put(MediaStore.Images.Media.DATA, file.getAbsolutePath());
-            collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-        }
-
-        Uri itemUri = null;
-        try {
-            itemUri = resolver.insert(collection, values);
-            if (itemUri == null) throw new IOException("Failed to create new MediaStore record.");
-
-            try (OutputStream os = resolver.openOutputStream(itemUri);
-                 InputStream is = getContentResolver().openInputStream(imageUri)) {
-                if (os == null || is == null) throw new IOException("Failed to open streams.");
-                byte[] buffer = new byte[4096];
-                int len;
-                while ((len = is.read(buffer)) != -1) {
-                    os.write(buffer, 0, len);
-                }
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                values.clear();
-                values.put(MediaStore.Images.Media.IS_PENDING, 0);
-                resolver.update(itemUri, values, null, null);
-            }
-
-            Toast.makeText(this, "Image saved to Gallery", Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            if (itemUri != null) {
-                resolver.delete(itemUri, null, null);
-            }
-            e.printStackTrace();
-            Toast.makeText(this, "Failed to save image", Toast.LENGTH_SHORT).show();
-        }
     }
 
     private Uri saveBitmapToCacheAndGetUri(Bitmap bitmap) {
@@ -654,7 +642,6 @@ public class GenerateActivity extends AppCompatActivity {
             Toast.makeText(this, "No camera found on this device", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
@@ -671,13 +658,22 @@ public class GenerateActivity extends AppCompatActivity {
             Toast.makeText(this, "No camera app found on this device", Toast.LENGTH_SHORT).show();
             return;
         }
-
         tempImageUri = createImageUri();
         if (tempImageUri != null) {
             takePictureLauncher.launch(tempImageUri);
         } else {
             Toast.makeText(this, "Could not create image file", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private Uri createImageUri() {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, "OutfitAI_Cam_" + System.currentTimeMillis() + ".jpg");
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "OutfitAI");
+        }
+        return getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
     }
 
     @Override
@@ -688,23 +684,19 @@ public class GenerateActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 openCamera();
             } else {
-                Toast.makeText(this, "Camera permission is required to take photos",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Camera permission is required", Toast.LENGTH_SHORT).show();
             }
-        } else if (requestCode == WRITE_STORAGE_PERMISSION_REQUEST_CODE) {
+        } else if (requestCode == ImageSaveHelper.WRITE_STORAGE_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if (generatedImageUri != null) {
-                    saveImageToGallery(generatedImageUri);
+                if (currentVisibleDialogUri != null) {
+                    ImageSaveHelper.saveImageToGallery(this, currentVisibleDialogUri);
+                } else if (generatedImageUri != null) {
+                    ImageSaveHelper.saveImageToGallery(this, generatedImageUri);
                 }
             } else {
-                Toast.makeText(this, "Storage permission is required to save images", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Storage permission is required", Toast.LENGTH_SHORT).show();
             }
         }
-    }
-
-    private Uri createImageUri() {
-        File imageFile = new File(getCacheDir(), "temp_image_" + System.currentTimeMillis() + ".jpg");
-        return FileProvider.getUriForFile(this, getPackageName() + ".provider", imageFile);
     }
 
     private void displaySelectedImage(Uri imageUri) {
@@ -713,18 +705,15 @@ public class GenerateActivity extends AppCompatActivity {
             ImageView personSelectedImage = findViewById(R.id.person_selected_image);
             ImageView personIcon = findViewById(R.id.person_icon);
             ImageView personUploadIcon = findViewById(R.id.person_uploadIcon);
-
             personSelectedImage.setImageURI(imageUri);
             personSelectedImage.setVisibility(View.VISIBLE);
             personIcon.setVisibility(View.GONE);
             personUploadIcon.setVisibility(View.GONE);
-
         } else if (currentImageTarget == ImageTarget.CLOTHING) {
             selectedClothingUri = imageUri;
             ImageView clothingSelectedImage = findViewById(R.id.clothing_selected_image);
             ImageView clothingIcon = findViewById(R.id.clothing_icon);
             ImageView clothingUploadIcon = findViewById(R.id.clothing_uploadIcon);
-
             clothingSelectedImage.setImageURI(imageUri);
             clothingSelectedImage.setVisibility(View.VISIBLE);
             clothingIcon.setVisibility(View.GONE);

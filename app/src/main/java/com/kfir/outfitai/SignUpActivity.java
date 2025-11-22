@@ -27,8 +27,8 @@ public class SignUpActivity extends AppCompatActivity {
 
         View backButton = findViewById(R.id.Back_button);
         backButton.setOnClickListener(v -> {
-            finish(); // Go back to the previous screen
-            overridePendingTransition(0, 0); // Disable animation
+            finish();
+            overridePendingTransition(0, 0);
         });
 
         View signUpButton = findViewById(R.id.SignUp_button);
@@ -40,7 +40,7 @@ public class SignUpActivity extends AppCompatActivity {
             @Override
             public void handleOnBackPressed() {
                 finish();
-                overridePendingTransition(0, 0); // Disable animation
+                overridePendingTransition(0, 0);
             }
         });
     }
@@ -93,13 +93,15 @@ public class SignUpActivity extends AppCompatActivity {
                 newUser.setPassword(password);
                 dbHelper.addUser(newUser);
 
+                SessionManager sessionManager = new SessionManager(this);
+                sessionManager.createLoginSession(email);
+
                 Toast.makeText(this, "Sign up successful!", Toast.LENGTH_SHORT).show();
 
-                // Go to Sign In screen
-                Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
+                Intent intent = new Intent(SignUpActivity.this, GenerateActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
-                overridePendingTransition(0, 0); // Disable animation
-                finish(); // Close this screen
+                finish();
             }
         }
     }

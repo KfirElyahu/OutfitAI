@@ -27,7 +27,7 @@ public class SignInActivity extends AppCompatActivity {
 
         View backButton = findViewById(R.id.Back_button);
         backButton.setOnClickListener(v -> {
-            finish(); // Go back to the previous screen
+            finish();
             overridePendingTransition(0, 0);
         });
 
@@ -42,7 +42,7 @@ public class SignInActivity extends AppCompatActivity {
             @Override
             public void handleOnBackPressed() {
                 finish();
-                overridePendingTransition(0, 0); // Disable animation
+                overridePendingTransition(0, 0);
             }
         });
     }
@@ -68,12 +68,15 @@ public class SignInActivity extends AppCompatActivity {
         }
 
         if (dbHelper.checkUserCredentials(emailOrUsername, password)) {
+            SessionManager sessionManager = new SessionManager(this);
+            sessionManager.createLoginSession(emailOrUsername);
+
             Toast.makeText(this, "Sign in successful!", Toast.LENGTH_SHORT).show();
 
             Intent intent = new Intent(SignInActivity.this, GenerateActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
-            overridePendingTransition(0, 0); // Disable animation
+            overridePendingTransition(0, 0);
             finish();
 
         } else {

@@ -12,11 +12,22 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginTop="50dp"
+        android:layout_marginStart="20dp"
+        android:padding="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/settings_icon" />
+
+    <ImageView
+        android:id="@+id/history_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="50dp"
         android:layout_marginEnd="20dp"
         android:padding="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/settings_icon" />
+        app:srcCompat="@drawable/ic_history" />
 
     <ScrollView
         android:id="@+id/scrollView"

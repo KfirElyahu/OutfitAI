@@ -4,6 +4,8 @@ public class User {
     private String username;
     private String email;
     private String password;
+    private String profilePicUri;
+
     public String getUsername() {
         return username;
     }
@@ -26,5 +28,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getProfilePicUri() {
+        return profilePicUri;
+    }
+
+    public void setProfilePicUri(String profilePicUri) {
+        this.profilePicUri = profilePicUri;
     }
 }

@@ -10,30 +10,39 @@ public class WelcomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        SessionManager sessionManager = new SessionManager(this);
+        if (sessionManager.isLoggedIn()) {
+            Intent intent = new Intent(WelcomeActivity.this, GenerateActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         setContentView(R.layout.welcome_screen);
 
         View signInButton = findViewById(R.id.SignIn_button);
         View signUpButton = findViewById(R.id.SignUp_button);
         View skipButton = findViewById(R.id.Skip_button);
 
-        // go to Sign In screen
         signInButton.setOnClickListener(v -> {
             Intent intent = new Intent(WelcomeActivity.this, SignInActivity.class);
             startActivity(intent);
-            overridePendingTransition(0, 0); // Disable animation
+            overridePendingTransition(0, 0);
         });
 
-        // go to Sign Up screen
         signUpButton.setOnClickListener(v -> {
             Intent intent = new Intent(WelcomeActivity.this, SignUpActivity.class);
             startActivity(intent);
-            overridePendingTransition(0, 0); // Disable animation
+            overridePendingTransition(0, 0);
         });
 
-        // go to the main Generate screen
         skipButton.setOnClickListener(v -> {
+            SessionManager session = new SessionManager(this);
+            session.createLoginSession("guest_user");
             Intent intent = new Intent(WelcomeActivity.this, GenerateActivity.class);
             startActivity(intent);
+            finish();
         });
     }
 }
