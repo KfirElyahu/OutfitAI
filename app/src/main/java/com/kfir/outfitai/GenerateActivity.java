@@ -7,14 +7,20 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.GridLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -24,6 +30,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -38,13 +45,20 @@ import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
@@ -60,7 +74,8 @@ public class GenerateActivity extends AppCompatActivity {
 
     private Uri selectedPersonUri;
     private Uri selectedClothingUri;
-    private Uri generatedImageUri; // To store the URI of the generated image
+    private Uri generatedImageUri;
+    private List<Uri> generatedGridUris = new ArrayList<>();
 
     private final Executor executor = Executors.newSingleThreadExecutor();
 
@@ -82,12 +97,18 @@ public class GenerateActivity extends AppCompatActivity {
     private long startTimeMillis;
     private int currentProgress = 0;
 
+    private List<String> availablePrompts;
+    private String currentPrompt;
+    private int selectedPromptIndex = 0;
+    private boolean isTryAllMode = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.generate_screen);
 
         setupActivityLaunchers();
+        loadPrompts();
 
         View settingsButton = findViewById(R.id.settings_button);
         settingsButton.setOnClickListener(v -> {
@@ -110,13 +131,17 @@ public class GenerateActivity extends AppCompatActivity {
         View generateButton = findViewById(R.id.generate_button);
         generateButton.setOnClickListener(v -> generateOutfit());
 
-        // Set OnClickListener for the result image
+        ImageButton promptMenuButton = findViewById(R.id.prompt_menu_button);
+        promptMenuButton.setOnClickListener(v -> showPromptSelectionDialog());
+
         ImageView resultImage = findViewById(R.id.result_image);
         resultImage.setOnClickListener(v -> {
             if (generatedImageUri != null) {
-                showGeneratedImageDialog();
+                showGeneratedImageDialog(generatedImageUri);
             }
         });
+
+        setupGridClickListeners();
 
         loadingOverlay = findViewById(R.id.loading_overlay);
         progressBar = findViewById(R.id.loading_progress_bar);
@@ -161,6 +186,116 @@ public class GenerateActivity extends AppCompatActivity {
         builder.show();
     }
 
+    private void setupGridClickListeners() {
+        int[] gridIds = {R.id.grid_image_1, R.id.grid_image_2, R.id.grid_image_3, R.id.grid_image_4};
+        for (int i = 0; i < gridIds.length; i++) {
+            final int index = i;
+            findViewById(gridIds[i]).setOnClickListener(v -> {
+                if (index < generatedGridUris.size()) {
+                    showGeneratedImageDialog(generatedGridUris.get(index));
+                }
+            });
+        }
+    }
+
+    private void loadPrompts() {
+        availablePrompts = new ArrayList<>();
+        try {
+            InputStream is = getAssets().open("prompts.json");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+            reader.close();
+
+            JSONArray jsonArray = new JSONArray(sb.toString());
+            for (int i = 0; i < jsonArray.length(); i++) {
+                availablePrompts.add(jsonArray.getString(i));
+            }
+        } catch (IOException | JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error loading prompts", Toast.LENGTH_SHORT).show();
+            // Fallback prompt
+            availablePrompts.add("Default: Apply outfit from second image to person in first image.");
+        }
+
+        // Set default prompt
+        if (!availablePrompts.isEmpty()) {
+            currentPrompt = availablePrompts.get(0);
+        }
+    }
+
+    private void showPromptSelectionDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        ListView listView = new ListView(this);
+
+        TextView tryAllButton = new TextView(this);
+        tryAllButton.setText("Try All Prompts");
+        tryAllButton.setTextSize(18);
+        tryAllButton.setPadding(30, 40, 30, 40);
+        tryAllButton.setGravity(Gravity.CENTER);
+        tryAllButton.setTextColor(Color.BLACK);
+        tryAllButton.setTypeface(getResources().getFont(R.font.roboto_bold));
+        tryAllButton.setBackgroundResource(R.drawable.green_large_button);
+
+        listView.addHeaderView(tryAllButton);
+
+        List<String> displayList = new ArrayList<>();
+        for (int i = 0; i < availablePrompts.size(); i++) {
+            displayList.add("Prompt " + (i + 1));
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, displayList) {
+            @NonNull
+            @Override
+            public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                view.setTextColor(Color.WHITE);
+                view.setTypeface(getResources().getFont(R.font.roboto_bold));
+                view.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+                view.setPadding(50, 30, 20, 30);
+
+                if (!isTryAllMode && position == selectedPromptIndex) {
+                    view.setTextColor(ContextCompat.getColor(getContext(), R.color.green));
+                }
+                return view;
+            }
+        };
+
+        listView.setAdapter(adapter);
+        listView.setDivider(ContextCompat.getDrawable(this, R.drawable.button_ripple));
+        listView.setDividerHeight(0);
+
+        builder.setView(listView);
+        AlertDialog dialog = builder.create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(R.drawable.dialog_background);
+        }
+
+        tryAllButton.setOnClickListener(v -> {
+            isTryAllMode = true;
+            Toast.makeText(GenerateActivity.this, "Selected: Try All Prompts", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            if (position > 0) {
+                int promptIndex = position - 1;
+                selectedPromptIndex = promptIndex;
+                currentPrompt = availablePrompts.get(promptIndex);
+                isTryAllMode = false;
+                Toast.makeText(GenerateActivity.this, "Selected: Prompt " + (promptIndex + 1), Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
     private void generateOutfit() {
         if (selectedPersonUri == null || selectedClothingUri == null) {
             Toast.makeText(this, "Please select both a person and clothing image", Toast.LENGTH_SHORT).show();
@@ -172,24 +307,59 @@ public class GenerateActivity extends AppCompatActivity {
         View generateButton = findViewById(R.id.generate_button);
         generateButton.setEnabled(false);
 
+        // Reset previous results views
+        findViewById(R.id.result_image).setVisibility(View.GONE);
+        findViewById(R.id.result_grid_container).setVisibility(View.GONE);
+
         executor.execute(() -> {
             try {
                 final String apiKey = ApiConfig.GEMINI_API_KEY;
 
-                runOnUiThread(() -> loadingStageText.setText("AI is designing outfit..."));
+                if (isTryAllMode) {
+                    // Generate multiple images
+                    List<Bitmap> results = new ArrayList<>();
+                    int limit = Math.min(availablePrompts.size(), 4); // Max 4 images
 
-                byte[] result = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri);
+                    for (int i = 0; i < limit; i++) {
+                        final int currentIdx = i;
+                        runOnUiThread(() -> loadingStageText.setText("Designing Variation " + (currentIdx + 1) + "..."));
 
-                runOnUiThread(() -> {
-                    stopLoadingAnimation();
-
-                    if (result != null) {
-                        displayResult(result);
-                    } else {
-                        Toast.makeText(this, "Failed to generate outfit", Toast.LENGTH_SHORT).show();
+                        byte[] resultBytes = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri, availablePrompts.get(i));
+                        if (resultBytes != null) {
+                            Bitmap bitmap = BitmapFactory.decodeByteArray(resultBytes, 0, resultBytes.length);
+                            if (bitmap != null) {
+                                results.add(bitmap);
+                            }
+                        }
                     }
-                    generateButton.setEnabled(true);
-                });
+
+                    runOnUiThread(() -> {
+                        stopLoadingAnimation();
+                        if (!results.isEmpty()) {
+                            displayGridResults(results);
+                        } else {
+                            Toast.makeText(this, "Failed to generate outfits", Toast.LENGTH_SHORT).show();
+                        }
+                        generateButton.setEnabled(true);
+                    });
+
+                } else {
+                    // Generate single image
+                    runOnUiThread(() -> loadingStageText.setText("AI is designing outfit..."));
+
+                    byte[] result = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri, currentPrompt);
+
+                    runOnUiThread(() -> {
+                        stopLoadingAnimation();
+                        if (result != null) {
+                            displayResult(result);
+                        } else {
+                            Toast.makeText(this, "Failed to generate outfit", Toast.LENGTH_SHORT).show();
+                        }
+                        generateButton.setEnabled(true);
+                    });
+                }
+
             } catch (Exception e) {
                 runOnUiThread(() -> {
                     stopLoadingAnimation();
@@ -226,13 +396,22 @@ public class GenerateActivity extends AppCompatActivity {
 
         if (currentProgress < 20) {
             currentProgress += 2;
-        } else if (currentProgress < 60) {
-            loadingStageText.setText("We are designing your outfit...");
+        } else if (currentProgress < 85) {
+            // Slow down progression
             if (elapsedMillis % 200 < 100) currentProgress += 1;
-        } else if (currentProgress < 90) {
-            loadingStageText.setText("Still working on it..");
-            if (elapsedMillis % 500 < 100) currentProgress += 1;
         }
+
+        // Specific text updates based on mode
+        if (isTryAllMode && currentProgress > 30 && currentProgress < 90) {
+            // The specific text is updated in the generate loop
+        } else if (!isTryAllMode) {
+            if (currentProgress > 30 && currentProgress < 60) {
+                loadingStageText.setText("We are designing your outfit...");
+            } else if (currentProgress >= 60 && currentProgress < 90) {
+                loadingStageText.setText("Still working on it..");
+            }
+        }
+
         progressBar.setProgress(currentProgress);
         loadingPercentageText.setText(currentProgress + "%");
     }
@@ -245,8 +424,7 @@ public class GenerateActivity extends AppCompatActivity {
         loadingOverlay.setVisibility(View.GONE);
     }
 
-    private byte[] callGeminiAPI(String apiKey, Uri personUri, Uri clothingUri) {
-        final String prompt = "Exact face, hair, skin tone, facial expression, eye direction, mouth shape, body proportions, pose, hand positions, fingers, background and lighting from the first image only - do not change anything else; completely remove every piece of existing clothing and replace the entire outfit (top, bottom, underwear, outerwear, dress, shoes, socks, belts, bags, jewelry, hats, glasses, every accessory) with the exact clothes worn/shown in the second image - if the second image contains a person, ignore their entire body and face and extract only their clothing items with their precise cut, fit, fabric behavior, wrinkles, patterns, colors and details; apply the full new outfit to the person from the first image even on body parts that are hidden or barely visible in the first image by intelligently inferring and generating the missing areas for perfect coverage and natural fit, ultra-realistic fabric physics, correct shadows and highlights, high resolution, no artifacts, no blending with original clothes whatsoever.";
+    private byte[] callGeminiAPI(String apiKey, Uri personUri, Uri clothingUri, String prompt) {
         try (Client client = new Client.Builder()
                 .apiKey(apiKey)
                 .build()) {
@@ -297,9 +475,11 @@ public class GenerateActivity extends AppCompatActivity {
         }
     }
 
+    // Display Single Result
     private void displayResult(byte[] imageData) {
         Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
         ImageView resultImage = findViewById(R.id.result_image);
+        GridLayout gridLayout = findViewById(R.id.result_grid_container);
 
         if (bitmap != null) {
             generatedImageUri = saveBitmapToCacheAndGetUri(bitmap);
@@ -308,8 +488,9 @@ public class GenerateActivity extends AppCompatActivity {
                 return;
             }
 
+            gridLayout.setVisibility(View.GONE); // Hide grid
             resultImage.setImageBitmap(bitmap);
-            resultImage.setVisibility(View.VISIBLE);
+            resultImage.setVisibility(View.VISIBLE); // Show single image
 
             ScrollView scrollView = findViewById(R.id.scrollView);
             if (scrollView != null) {
@@ -320,12 +501,47 @@ public class GenerateActivity extends AppCompatActivity {
         }
     }
 
-    private void showGeneratedImageDialog() {
+    // Display Grid Results
+    private void displayGridResults(List<Bitmap> bitmaps) {
+        ImageView resultImage = findViewById(R.id.result_image);
+        GridLayout gridLayout = findViewById(R.id.result_grid_container);
+
+        generatedGridUris.clear();
+
+        // Ids of the images in the grid xml
+        int[] gridIds = {R.id.grid_image_1, R.id.grid_image_2, R.id.grid_image_3, R.id.grid_image_4};
+
+        // Hide all first
+        for(int id : gridIds) {
+            findViewById(id).setVisibility(View.GONE);
+        }
+
+        for (int i = 0; i < bitmaps.size() && i < gridIds.length; i++) {
+            Bitmap bitmap = bitmaps.get(i);
+            Uri uri = saveBitmapToCacheAndGetUri(bitmap);
+            if (uri != null) {
+                generatedGridUris.add(uri);
+                ImageView imgView = findViewById(gridIds[i]);
+                imgView.setImageBitmap(bitmap);
+                imgView.setVisibility(View.VISIBLE);
+            }
+        }
+
+        resultImage.setVisibility(View.GONE); // Hide single image
+        gridLayout.setVisibility(View.VISIBLE); // Show grid
+
+        ScrollView scrollView = findViewById(R.id.scrollView);
+        if (scrollView != null) {
+            scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
+        }
+    }
+
+    private void showGeneratedImageDialog(Uri imageUriToDisplay) {
         View overlayView = getLayoutInflater().inflate(R.layout.view_image_overlay, null);
 
         final PhotoViewDialog.Builder<Uri> builder = new PhotoViewDialog.Builder<>(
                 this,
-                Collections.singletonList(generatedImageUri),
+                Collections.singletonList(imageUriToDisplay),
                 (imageView, uri) -> Glide.with(GenerateActivity.this).load(uri).into(imageView)
         );
 
@@ -336,16 +552,18 @@ public class GenerateActivity extends AppCompatActivity {
         backButton.setOnClickListener(v -> dialog.dismiss());
 
         ImageButton saveButton = overlayView.findViewById(R.id.button_save);
-        saveButton.setOnClickListener(v -> checkStoragePermissionAndSave());
+        saveButton.setOnClickListener(v -> checkStoragePermissionAndSave(imageUriToDisplay));
 
         dialog.show();
     }
 
-    private void checkStoragePermissionAndSave() {
-        if (generatedImageUri == null) {
+    private void checkStoragePermissionAndSave(Uri uriToSave) {
+        if (uriToSave == null) {
             Toast.makeText(this, "No image to save", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        generatedImageUri = uriToSave;
 
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -354,11 +572,15 @@ public class GenerateActivity extends AppCompatActivity {
                         new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         WRITE_STORAGE_PERMISSION_REQUEST_CODE);
             } else {
-                saveImageToGallery(generatedImageUri);
+                saveImageToGallery(uriToSave);
             }
         } else {
-            saveImageToGallery(generatedImageUri);
+            saveImageToGallery(uriToSave);
         }
+    }
+
+    private void checkStoragePermissionAndSave() {
+        checkStoragePermissionAndSave(generatedImageUri);
     }
 
     private void saveImageToGallery(Uri imageUri) {
