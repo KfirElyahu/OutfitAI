@@ -136,16 +136,28 @@
                 android:textSize="20dp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/UsernameOrPassword_textInputBackground" />
+                app:layout_constraintTop_toBottomOf="@+id/UsernameOrPassword_textInputBackground" />>
+
+            <ImageButton
+                android:id="@+id/btn_toggle_password_signin"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_visibility"
+                app:layout_constraintBottom_toBottomOf="@+id/Password_textInputBackground"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/Password_textInputBackground"
+                app:layout_constraintVertical_bias="0.3" />
 
             <ImageView
                 android:id="@+id/Password_textInputBackground"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="30dp"
-                android:layout_marginEnd="30dp"
                 android:scaleType="fitXY"
-                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/btn_toggle_password_signin"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/Password_text"
                 app:srcCompat="@drawable/white_text_input_background" />

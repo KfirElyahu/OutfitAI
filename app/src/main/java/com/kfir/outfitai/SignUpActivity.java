@@ -7,6 +7,9 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.Toast;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
+import android.widget.ImageButton;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,6 +37,14 @@ public class SignUpActivity extends AppCompatActivity {
         View signUpButton = findViewById(R.id.SignUp_button);
         signUpButton.setOnClickListener(v -> validateSignUp());
 
+        EditText passwordInput = findViewById(R.id.Password_textInput);
+        ImageButton togglePassBtn = findViewById(R.id.btn_toggle_password_signup);
+        setupPasswordToggle(passwordInput, togglePassBtn);
+
+        EditText confirmInput = findViewById(R.id.ConfirmPassword_textInput);
+        ImageButton toggleConfirmBtn = findViewById(R.id.btn_toggle_confirm_signup);
+        setupPasswordToggle(confirmInput, toggleConfirmBtn);
+
         setupKeyboardHandlingForForms();
 
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -42,6 +53,21 @@ public class SignUpActivity extends AppCompatActivity {
                 finish();
                 overridePendingTransition(0, 0);
             }
+        });
+    }
+
+    private void setupPasswordToggle(EditText editText, ImageButton button) {
+        button.setOnClickListener(v -> {
+            int selectionStart = editText.getSelectionStart();
+            int selectionEnd = editText.getSelectionEnd();
+            if (editText.getTransformationMethod() instanceof PasswordTransformationMethod) {
+                editText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                button.setImageResource(R.drawable.ic_visibility_off);
+            } else {
+                editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                button.setImageResource(R.drawable.ic_visibility);
+            }
+            editText.setSelection(selectionStart, selectionEnd);
         });
     }
 

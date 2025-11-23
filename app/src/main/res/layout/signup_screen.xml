@@ -201,14 +201,26 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/Email_textInputBackground" />
 
+            <ImageButton
+                android:id="@+id/btn_toggle_password_signup"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_visibility"
+                app:layout_constraintBottom_toBottomOf="@+id/Password_textInputBackground"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/Password_textInputBackground"
+                app:layout_constraintVertical_bias="0.3" />
+
             <ImageView
                 android:id="@+id/Password_textInputBackground"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="30dp"
-                android:layout_marginEnd="30dp"
                 android:scaleType="fitXY"
-                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/btn_toggle_password_signup"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/Password_text"
@@ -248,14 +260,26 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/Password_textInputBackground" />
 
+            <ImageButton
+                android:id="@+id/btn_toggle_confirm_signup"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_visibility"
+                app:layout_constraintBottom_toBottomOf="@+id/ConfirmPassword_textInputBackground"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/ConfirmPassword_textInputBackground"
+                app:layout_constraintVertical_bias="0.3" />
+
             <ImageView
                 android:id="@+id/ConfirmPassword_textInputBackground"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="30dp"
-                android:layout_marginEnd="30dp"
                 android:scaleType="fitXY"
-                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/btn_toggle_confirm_signup"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/ConfirmPassword_text"

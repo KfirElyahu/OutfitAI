@@ -229,14 +229,26 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/Email_bg" />
 
+                <ImageButton
+                    android:id="@+id/btn_toggle_password_settings"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="10dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_visibility"
+                    app:layout_constraintBottom_toBottomOf="@+id/Password_bg"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/Password_bg"
+                    app:layout_constraintVertical_bias="0.3" />
+
                 <ImageView
                     android:id="@+id/Password_bg"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="30dp"
-                    android:layout_marginEnd="30dp"
                     android:scaleType="fitXY"
-                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/btn_toggle_password_settings"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/Password_text"
                     app:srcCompat="@drawable/white_text_input_background" />
@@ -275,14 +287,26 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/Password_bg" />
 
+                <ImageButton
+                    android:id="@+id/btn_toggle_confirm_settings"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="10dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_visibility"
+                    app:layout_constraintBottom_toBottomOf="@+id/Confirm_bg"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/Confirm_bg"
+                    app:layout_constraintVertical_bias="0.3" />
+
                 <ImageView
                     android:id="@+id/Confirm_bg"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="30dp"
-                    android:layout_marginEnd="30dp"
                     android:scaleType="fitXY"
-                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintEnd_toStartOf="@+id/btn_toggle_confirm_settings"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@+id/Confirm_text"
                     app:srcCompat="@drawable/white_text_input_background" />

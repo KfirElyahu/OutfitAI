@@ -85,6 +85,23 @@ public class HelperUserDB extends SQLiteOpenHelper {
         db.close();
     }
 
+    public String resolveEmailFromInput(String emailOrUsername) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String selection = COLUMN_USER_EMAIL + " = ? OR " + COLUMN_USER_NAME + " = ?";
+        String[] selectionArgs = {emailOrUsername, emailOrUsername};
+
+        Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_USER_EMAIL}, selection, selectionArgs, null, null, null);
+        String resolvedEmail = null;
+
+        if (cursor.moveToFirst()) {
+            resolvedEmail = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_EMAIL));
+        }
+
+        cursor.close();
+        db.close();
+        return resolvedEmail;
+    }
+
     public User getUserDetails(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_USERS, null, COLUMN_USER_EMAIL + " = ?", new String[]{email}, null, null, null);

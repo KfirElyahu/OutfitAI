@@ -14,6 +14,9 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.Toast;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
+import android.widget.ImageButton;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
@@ -84,6 +87,12 @@ public class SettingsActivity extends AppCompatActivity {
             System.exit(0);
         });
 
+        ImageButton togglePassBtn = findViewById(R.id.btn_toggle_password_settings);
+        setupPasswordToggle(editPassword, togglePassBtn);
+
+        ImageButton toggleConfirmBtn = findViewById(R.id.btn_toggle_confirm_settings);
+        setupPasswordToggle(editConfirmPassword, toggleConfirmBtn);
+
         findViewById(R.id.profile_image_clickable).setOnClickListener(v -> showImagePickerDialog());
 
         if (currentEmail == null || currentEmail.isEmpty() || currentEmail.equals("guest_user")) {
@@ -128,6 +137,21 @@ public class SettingsActivity extends AppCompatActivity {
                 selectedProfileUri = saveUriToInternalStorage(tempImageUri);
                 displayProfileImage(selectedProfileUri);
             }
+        });
+    }
+
+    private void setupPasswordToggle(EditText editText, ImageButton button) {
+        button.setOnClickListener(v -> {
+            int selectionStart = editText.getSelectionStart();
+            int selectionEnd = editText.getSelectionEnd();
+            if (editText.getTransformationMethod() instanceof PasswordTransformationMethod) {
+                editText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                button.setImageResource(R.drawable.ic_visibility_off);
+            } else {
+                editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                button.setImageResource(R.drawable.ic_visibility);
+            }
+            editText.setSelection(selectionStart, selectionEnd);
         });
     }
 
