@@ -11,18 +11,15 @@ import java.util.List;
 
 public class HelperUserDB extends SQLiteOpenHelper {
 
-    // Database Info
     private static final String DATABASE_NAME = "OutfitAIDB.db";
     private static final int DATABASE_VERSION = 4;
 
-    // Users Table
     public static final String TABLE_USERS = "users";
     public static final String COLUMN_USER_EMAIL = "email";
     public static final String COLUMN_USER_NAME = "username";
     public static final String COLUMN_USER_PASSWORD = "password";
     public static final String COLUMN_USER_PROFILE_PIC = "profile_pic";
 
-    // History Table
     public static final String TABLE_HISTORY = "history";
     public static final String COLUMN_HISTORY_ID = "id";
     public static final String COLUMN_HISTORY_USER_EMAIL = "user_email";
@@ -118,7 +115,12 @@ public class HelperUserDB extends SQLiteOpenHelper {
             values.put(COLUMN_USER_PROFILE_PIC, updatedUser.getProfilePicUri());
 
             if (!currentEmail.equals(updatedUser.getEmail())) {
-                if (checkUserExists(updatedUser.getEmail())) {
+                Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_USER_EMAIL},
+                        COLUMN_USER_EMAIL + " = ?", new String[]{updatedUser.getEmail()}, null, null, null);
+                boolean exists = cursor.getCount() > 0;
+                cursor.close();
+
+                if (exists) {
                     return false;
                 }
 
