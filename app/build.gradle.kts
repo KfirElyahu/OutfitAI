@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -45,6 +46,9 @@ dependencies {
     implementation("io.getstream:photoview-dialog:1.0.3")
     implementation("com.github.bumptech.glide:glide:5.0.5")
     implementation("com.google.genai:google-genai:1.28.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-analytics")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)

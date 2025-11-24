@@ -3,6 +3,7 @@ package com.kfir.outfitai;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ScrollView;
@@ -17,9 +18,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class SignUpActivity extends AppCompatActivity {
 
+    private static final String TAG = "SignUpActivity";
     private HelperUserDB dbHelper;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +33,7 @@ public class SignUpActivity extends AppCompatActivity {
         setContentView(R.layout.signup_screen);
 
         dbHelper = new HelperUserDB(this);
+        mAuth = FirebaseAuth.getInstance();
 
         View backButton = findViewById(R.id.Back_button);
         backButton.setOnClickListener(v -> {
@@ -99,8 +106,8 @@ public class SignUpActivity extends AppCompatActivity {
             isValid = false;
         }
 
-        if (password.length() < 8) {
-            passwordInput.setError("Password must be at least 8 characters long");
+        if (password.length() < 6) {
+            passwordInput.setError("Password must be at least 6 characters long");
             isValid = false;
         }
 
@@ -110,25 +117,49 @@ public class SignUpActivity extends AppCompatActivity {
         }
 
         if (isValid) {
-            if (dbHelper.checkUserExists(email)) {
-                emailInput.setError("An account with this email already exists");
-            } else {
-                User newUser = new User();
-                newUser.setUsername(username);
-                newUser.setEmail(email);
-                newUser.setPassword(password);
-                dbHelper.addUser(newUser);
+            mAuth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(this, task -> {
+                        if (task.isSuccessful()) {
+                            Log.d(TAG, "createUserWithEmail:success");
+                            FirebaseUser firebaseUser = mAuth.getCurrentUser();
 
-                SessionManager sessionManager = new SessionManager(this);
-                sessionManager.createLoginSession(email);
+                            if (firebaseUser != null) {
+                                firebaseUser.sendEmailVerification()
+                                        .addOnCompleteListener(emailTask -> {
+                                            if (emailTask.isSuccessful()) {
+                                                if (!dbHelper.checkUserExists(email)) {
+                                                    User newUser = new User();
+                                                    newUser.setUsername(username);
+                                                    newUser.setEmail(email);
+                                                    newUser.setPassword(password);
+                                                    dbHelper.addUser(newUser);
+                                                }
 
-                Toast.makeText(this, "Sign up successful!", Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(SignUpActivity.this,
+                                                        "Account created! Verification email sent to " + email,
+                                                        Toast.LENGTH_LONG).show();
 
-                Intent intent = new Intent(SignUpActivity.this, GenerateActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
-            }
+                                                Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
+                                                startActivity(intent);
+                                                finish();
+                                            } else {
+                                                Log.e(TAG, "sendEmailVerification", emailTask.getException());
+                                                Toast.makeText(SignUpActivity.this,
+                                                        "Failed to send verification email.",
+                                                        Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                            }
+                        } else {
+                            Log.w(TAG, "createUserWithEmail:failure", task.getException());
+                            String errorMsg = task.getException() != null ? task.getException().getMessage() : "Authentication failed.";
+                            if (errorMsg.contains("already in use")) {
+                                emailInput.setError("Email already registered");
+                            }
+                            Toast.makeText(SignUpActivity.this, "Sign up failed: " + errorMsg,
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    });
         }
     }
 

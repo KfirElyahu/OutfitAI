@@ -3,6 +3,7 @@ package com.kfir.outfitai;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ScrollView;
@@ -17,9 +18,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 public class SignInActivity extends AppCompatActivity {
 
+    private static final String TAG = "SignInActivity";
     private HelperUserDB dbHelper;
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +33,7 @@ public class SignInActivity extends AppCompatActivity {
         setContentView(R.layout.signin_screen);
 
         dbHelper = new HelperUserDB(this);
+        mAuth = FirebaseAuth.getInstance();
 
         View backButton = findViewById(R.id.Back_button);
         backButton.setOnClickListener(v -> {
@@ -35,9 +42,10 @@ public class SignInActivity extends AppCompatActivity {
         });
 
         View signInButton = findViewById(R.id.SignIn_button);
-        signInButton.setOnClickListener(v -> {
-            validateSignIn();
-        });
+        signInButton.setOnClickListener(v -> validateSignIn());
+
+        View forgotPasswordButton = findViewById(R.id.ForgotPassword_button);
+        forgotPasswordButton.setOnClickListener(v -> sendPasswordReset());
 
         EditText passwordInput = findViewById(R.id.Password_textInput);
         ImageButton togglePassBtn = findViewById(R.id.btn_toggle_password_signin);
@@ -71,6 +79,30 @@ public class SignInActivity extends AppCompatActivity {
         });
     }
 
+    private void sendPasswordReset() {
+        EditText emailOrUsernameInput = findViewById(R.id.UsernameOrEmail_textInput);
+        String input = emailOrUsernameInput.getText().toString().trim();
+
+        String email = dbHelper.resolveEmailFromInput(input);
+        if (email == null) {
+            email = input;
+        }
+
+        if (email.isEmpty()) {
+            emailOrUsernameInput.setError("Enter email to reset password");
+            return;
+        }
+
+        mAuth.sendPasswordResetEmail(email)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(SignInActivity.this, "Reset email sent to " + input, Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(SignInActivity.this, "Failed to send reset email. Check if account exists.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
     private void validateSignIn() {
         EditText emailOrUsernameInput = findViewById(R.id.UsernameOrEmail_textInput);
         EditText passwordInput = findViewById(R.id.Password_textInput);
@@ -91,27 +123,44 @@ public class SignInActivity extends AppCompatActivity {
             return;
         }
 
-        if (dbHelper.checkUserCredentials(emailOrUsername, password)) {
-            String resolvedEmail = dbHelper.resolveEmailFromInput(emailOrUsername);
-
-            if (resolvedEmail == null) {
-                resolvedEmail = emailOrUsername;
-            }
-
-            SessionManager sessionManager = new SessionManager(this);
-            sessionManager.createLoginSession(resolvedEmail);
-
-            Toast.makeText(this, "Sign in successful!", Toast.LENGTH_SHORT).show();
-
-            Intent intent = new Intent(SignInActivity.this, GenerateActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            overridePendingTransition(0, 0);
-            finish();
-
-        } else {
-            Toast.makeText(this, "Invalid username/email or password", Toast.LENGTH_SHORT).show();
+        String resolvedEmail = dbHelper.resolveEmailFromInput(emailOrUsername);
+        if (resolvedEmail == null) {
+            resolvedEmail = emailOrUsername;
         }
+
+        final String finalEmail = resolvedEmail;
+
+        mAuth.signInWithEmailAndPassword(finalEmail, password)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "signInWithEmail:success");
+                        FirebaseUser user = mAuth.getCurrentUser();
+
+                        if (user != null) {
+                            user.reload().addOnCompleteListener(reloadTask -> {
+                                if (user.isEmailVerified()) {
+                                    SessionManager sessionManager = new SessionManager(SignInActivity.this);
+                                    sessionManager.createLoginSession(finalEmail);
+
+                                    Toast.makeText(SignInActivity.this, "Sign in successful!", Toast.LENGTH_SHORT).show();
+
+                                    Intent intent = new Intent(SignInActivity.this, GenerateActivity.class);
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                    startActivity(intent);
+                                    overridePendingTransition(0, 0);
+                                    finish();
+                                } else {
+                                    mAuth.signOut();
+                                    Toast.makeText(SignInActivity.this, "Email not verified. Please check your inbox.", Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        }
+                    } else {
+                        Log.w(TAG, "signInWithEmail:failure", task.getException());
+                        Toast.makeText(SignInActivity.this, "Authentication failed. Check credentials.",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void setupKeyboardHandlingForForms() {
