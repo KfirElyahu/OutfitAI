@@ -143,9 +143,6 @@ public class SignUpActivity extends AppCompatActivity {
                                                             finish();
                                                         });
 
-                                                Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
-                                                startActivity(intent);
-                                                finish();
                                             } else {
                                                 Log.e(TAG, "sendEmailVerification", emailTask.getException());
                                                 DialogUtils.showDialog(SignUpActivity.this, "Error", "Failed to send verification email.");

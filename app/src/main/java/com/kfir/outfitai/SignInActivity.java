@@ -158,7 +158,8 @@ public class SignInActivity extends AppCompatActivity {
                         }
                     } else {
                         Log.w(TAG, "signInWithEmail:failure", task.getException());
-                        DialogUtils.showDialog(SignInActivity.this, "Sign In Failed", "Authentication failed. Please check your credentials.");
+                        Toast.makeText(SignInActivity.this, "Authentication failed. Check credentials.",
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
     }
