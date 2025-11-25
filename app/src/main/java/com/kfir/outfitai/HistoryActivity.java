@@ -90,7 +90,7 @@ public class HistoryActivity extends AppCompatActivity {
                     ImageSaveHelper.saveImageToGallery(this, currentVisibleUri);
                 }
             } else {
-                Toast.makeText(this, "Storage permission is required to save images", Toast.LENGTH_SHORT).show();
+                DialogUtils.showDialog(this, "Permission Required", "Storage permission is required to save images.");
             }
         }
     }

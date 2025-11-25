@@ -25,7 +25,7 @@ public class ImageSaveHelper {
 
     public static void checkPermissionAndSave(Activity activity, Uri uriToSave) {
         if (uriToSave == null) {
-            Toast.makeText(activity, "No image to save", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(activity, "Error", "No image to save.");
             return;
         }
 
@@ -88,13 +88,14 @@ public class ImageSaveHelper {
                 resolver.update(itemUri, values, null, null);
             }
 
-            Toast.makeText(activity, "Image saved to Gallery", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(activity, "Success", "Image saved to Gallery successfully!");
+
         } catch (IOException e) {
             if (itemUri != null) {
                 resolver.delete(itemUri, null, null);
             }
             e.printStackTrace();
-            Toast.makeText(activity, "Failed to save image", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(activity, "Failed", "Could not save image to gallery.");
         }
     }
 }

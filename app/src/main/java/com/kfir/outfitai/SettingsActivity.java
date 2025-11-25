@@ -98,7 +98,7 @@ public class SettingsActivity extends AppCompatActivity {
         if (currentEmail == null || currentEmail.isEmpty() || currentEmail.equals("guest_user")) {
             findViewById(R.id.form_container).setVisibility(View.GONE);
             findViewById(R.id.profile_image_clickable).setEnabled(false);
-            Toast.makeText(this, "Guest accounts cannot change settings", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(this, "Guest Mode", "Guest accounts cannot change settings.");
         } else {
             loadUserData();
             setupImagePickers();
@@ -180,7 +180,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void checkCameraPermissionAndOpenCamera() {
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-            Toast.makeText(this, "No camera found", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(this, "Error", "No camera found.");
             return;
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -193,7 +193,7 @@ public class SettingsActivity extends AppCompatActivity {
     private void openCamera() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (cameraIntent.resolveActivity(getPackageManager()) == null) {
-            Toast.makeText(this, "No camera app found", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(this, "Error", "No camera app found.");
             return;
         }
         tempImageUri = createImageUri();
@@ -256,15 +256,17 @@ public class SettingsActivity extends AppCompatActivity {
         updatedUser.setProfilePicUri(selectedProfileUri != null ? selectedProfileUri.toString() : currentUser.getProfilePicUri());
 
         if (dbHelper.updateUserProfile(currentEmail, updatedUser)) {
-            Toast.makeText(this, "Profile Updated!", Toast.LENGTH_SHORT).show();
-            if (!currentEmail.equals(newEmail)) {
-                sessionManager.logoutUser();
-                sessionManager.createLoginSession(newEmail);
-                currentEmail = newEmail;
-            }
+            DialogUtils.showDialog(this, "Success", "Profile Updated Successfully!", () -> {
+                if (!currentEmail.equals(newEmail)) {
+                    sessionManager.logoutUser();
+                    sessionManager.createLoginSession(newEmail);
+                    currentEmail = newEmail;
+                }
+                loadUserData();
+            });
             loadUserData();
         } else {
-            Toast.makeText(this, "Update failed.", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(this, "Update Failed", "Could not update profile. Please try again.");
         }
     }
 

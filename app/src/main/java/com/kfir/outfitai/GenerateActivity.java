@@ -184,7 +184,7 @@ public class GenerateActivity extends AppCompatActivity {
                 Uri persistentUri = saveUriToInternalStorage(uri);
                 displaySelectedImage(persistentUri);
             } else {
-                Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show();
+                DialogUtils.showDialog(this, "Selection", "No image selected");
             }
         });
 
@@ -193,7 +193,7 @@ public class GenerateActivity extends AppCompatActivity {
                 Uri persistentUri = saveUriToInternalStorage(tempImageUri);
                 displaySelectedImage(persistentUri);
             } else {
-                Toast.makeText(this, "Failed to capture image", Toast.LENGTH_SHORT).show();
+                DialogUtils.showDialog(this, "Camera Error", "Failed to capture image.");
             }
         });
     }
@@ -356,7 +356,7 @@ public class GenerateActivity extends AppCompatActivity {
 
     private void generateOutfit() {
         if (selectedPersonUri == null || selectedClothingUri == null) {
-            Toast.makeText(this, "Please select both a person and clothing image", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(this, "Missing Images", "Please select both a person and clothing image before generating.");
             return;
         }
 
@@ -392,7 +392,7 @@ public class GenerateActivity extends AppCompatActivity {
                             displayGridResults(results);
                             saveToHistory(generatedGridUris);
                         } else {
-                            Toast.makeText(this, "Failed to generate outfits", Toast.LENGTH_SHORT).show();
+                            DialogUtils.showDialog(GenerateActivity.this, "Generation Failed", "The AI could not generate the outfits. Please try different images.");
                         }
                         generateButton.setEnabled(true);
                     });
@@ -409,7 +409,7 @@ public class GenerateActivity extends AppCompatActivity {
                             uris.add(generatedImageUri);
                             saveToHistory(uris);
                         } else {
-                            Toast.makeText(this, "Failed to generate outfit", Toast.LENGTH_SHORT).show();
+                            DialogUtils.showDialog(GenerateActivity.this, "Generation Failed", "The AI could not generate the outfit. Please try different images.");
                         }
                         generateButton.setEnabled(true);
                     });
@@ -418,7 +418,7 @@ public class GenerateActivity extends AppCompatActivity {
             } catch (Exception e) {
                 runOnUiThread(() -> {
                     stopLoadingAnimation();
-                    Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    DialogUtils.showDialog(GenerateActivity.this, "Error", "An unexpected error occurred: " + e.getMessage());
                     generateButton.setEnabled(true);
                 });
             }
@@ -545,7 +545,7 @@ public class GenerateActivity extends AppCompatActivity {
         if (bitmap != null) {
             generatedImageUri = saveBitmapToCacheAndGetUri(bitmap);
             if (generatedImageUri == null) {
-                Toast.makeText(this, "Failed to cache generated image", Toast.LENGTH_SHORT).show();
+                DialogUtils.showDialog(this, "Storage Error", "Failed to cache generated image.");
                 return;
             }
             generatedGridUris.add(generatedImageUri);
@@ -565,7 +565,7 @@ public class GenerateActivity extends AppCompatActivity {
                 scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
             }
         } else {
-            Toast.makeText(this, "Failed to decode generated image", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(this, "Error", "Failed to decode the generated image.");
         }
     }
 
@@ -639,7 +639,7 @@ public class GenerateActivity extends AppCompatActivity {
 
     private void checkCameraPermissionAndOpenCamera() {
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-            Toast.makeText(this, "No camera found on this device", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(this, "Error", "No camera app found on this device.");
             return;
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -655,14 +655,14 @@ public class GenerateActivity extends AppCompatActivity {
     private void openCamera() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (cameraIntent.resolveActivity(getPackageManager()) == null) {
-            Toast.makeText(this, "No camera app found on this device", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(this, "Error", "No camera app found on this device.");
             return;
         }
         tempImageUri = createImageUri();
         if (tempImageUri != null) {
             takePictureLauncher.launch(tempImageUri);
         } else {
-            Toast.makeText(this, "Could not create image file", Toast.LENGTH_SHORT).show();
+            DialogUtils.showDialog(this, "Storage Error", "Could not create temporary image file.");
         }
     }
 
@@ -684,7 +684,7 @@ public class GenerateActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 openCamera();
             } else {
-                Toast.makeText(this, "Camera permission is required", Toast.LENGTH_SHORT).show();
+                DialogUtils.showDialog(this, "Permission Required", "Camera permission is required to take photos.");
             }
         } else if (requestCode == ImageSaveHelper.WRITE_STORAGE_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -694,7 +694,7 @@ public class GenerateActivity extends AppCompatActivity {
                     ImageSaveHelper.saveImageToGallery(this, generatedImageUri);
                 }
             } else {
-                Toast.makeText(this, "Storage permission is required", Toast.LENGTH_SHORT).show();
+                DialogUtils.showDialog(this, "Permission Required", "Storage permission is required to save images.");
             }
         }
     }

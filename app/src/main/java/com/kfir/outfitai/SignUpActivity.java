@@ -135,18 +135,20 @@ public class SignUpActivity extends AppCompatActivity {
                                                     dbHelper.addUser(newUser);
                                                 }
 
-                                                Toast.makeText(SignUpActivity.this,
-                                                        "Account created! Verification email sent to " + email,
-                                                        Toast.LENGTH_LONG).show();
+                                                DialogUtils.showDialog(SignUpActivity.this, "Account Created",
+                                                        "Verification email sent to " + email + ". Please verify before logging in.",
+                                                        () -> {
+                                                            Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
+                                                            startActivity(intent);
+                                                            finish();
+                                                        });
 
                                                 Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
                                                 startActivity(intent);
                                                 finish();
                                             } else {
                                                 Log.e(TAG, "sendEmailVerification", emailTask.getException());
-                                                Toast.makeText(SignUpActivity.this,
-                                                        "Failed to send verification email.",
-                                                        Toast.LENGTH_SHORT).show();
+                                                DialogUtils.showDialog(SignUpActivity.this, "Error", "Failed to send verification email.");
                                             }
                                         });
                             }
@@ -155,9 +157,10 @@ public class SignUpActivity extends AppCompatActivity {
                             String errorMsg = task.getException() != null ? task.getException().getMessage() : "Authentication failed.";
                             if (errorMsg.contains("already in use")) {
                                 emailInput.setError("Email already registered");
+                                DialogUtils.showDialog(SignUpActivity.this, "Sign Up Failed", "This email is already registered.");
+                            } else {
+                                DialogUtils.showDialog(SignUpActivity.this, "Sign Up Failed", errorMsg);
                             }
-                            Toast.makeText(SignUpActivity.this, "Sign up failed: " + errorMsg,
-                                    Toast.LENGTH_LONG).show();
                         }
                     });
         }

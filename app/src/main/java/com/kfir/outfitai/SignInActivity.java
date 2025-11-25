@@ -97,9 +97,9 @@ public class SignInActivity extends AppCompatActivity {
         mAuth.sendPasswordResetEmail(email)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        Toast.makeText(SignInActivity.this, "Reset email sent to " + input, Toast.LENGTH_LONG).show();
+                        DialogUtils.showDialog(SignInActivity.this, "Check Email", "Reset link sent to " + input);
                     } else {
-                        Toast.makeText(SignInActivity.this, "Failed to send reset email. Check if account exists.", Toast.LENGTH_SHORT).show();
+                        DialogUtils.showDialog(SignInActivity.this, "Error", "Failed to send reset email. Check if account exists.");
                     }
                 });
     }
@@ -152,14 +152,13 @@ public class SignInActivity extends AppCompatActivity {
                                     finish();
                                 } else {
                                     mAuth.signOut();
-                                    Toast.makeText(SignInActivity.this, "Email not verified. Please check your inbox.", Toast.LENGTH_LONG).show();
+                                    DialogUtils.showDialog(SignInActivity.this, "Verification Required", "Email not verified. Please check your inbox.");
                                 }
                             });
                         }
                     } else {
                         Log.w(TAG, "signInWithEmail:failure", task.getException());
-                        Toast.makeText(SignInActivity.this, "Authentication failed. Check credentials.",
-                                Toast.LENGTH_SHORT).show();
+                        DialogUtils.showDialog(SignInActivity.this, "Sign In Failed", "Authentication failed. Please check your credentials.");
                     }
                 });
     }
