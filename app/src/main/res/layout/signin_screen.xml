@@ -65,15 +65,17 @@
         android:id="@+id/scrollView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="20dp"
-        app:layout_constraintBottom_toTopOf="@+id/SignIn_button"
+        android:layout_marginBottom="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/OutfitAI_text">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:paddingBottom="50dp">
 
             <TextView
                 android:id="@+id/UsernameOrPassword_text"
@@ -119,10 +121,8 @@
                 android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="@+id/UsernameOrPassword_textInputBackground"
                 app:layout_constraintEnd_toEndOf="@+id/UsernameOrPassword_textInputBackground"
-                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="@+id/UsernameOrPassword_textInputBackground"
-                app:layout_constraintTop_toTopOf="@+id/UsernameOrPassword_textInputBackground"
-                app:layout_constraintVertical_bias="0.0" />
+                app:layout_constraintTop_toTopOf="@+id/UsernameOrPassword_textInputBackground" />
 
             <TextView
                 android:id="@+id/Password_text"
@@ -136,7 +136,7 @@
                 android:textSize="20dp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/UsernameOrPassword_textInputBackground" />>
+                app:layout_constraintTop_toBottomOf="@+id/UsernameOrPassword_textInputBackground" />
 
             <ImageButton
                 android:id="@+id/btn_toggle_password_signin"
@@ -183,48 +183,39 @@
                 app:layout_constraintStart_toStartOf="@+id/Password_textInputBackground"
                 app:layout_constraintTop_toTopOf="@+id/Password_textInputBackground" />
 
-            <View
-                android:id="@+id/scroll_spacer"
-                android:layout_width="0dp"
-                android:layout_height="150dp"
-                app:layout_constraintTop_toBottomOf="@+id/Password_textInputBackground"
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/SignIn_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="50dp"
+                android:background="@drawable/green_large_button"
+                android:fontFamily="@font/roboto_bold"
+                android:foreground="@drawable/button_ripple"
+                android:text="Sign In"
+                android:textAllCaps="false"
+                android:textColor="@color/black"
+                android:textSize="20dp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintTop_toBottomOf="@+id/Password_textInputBackground" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/ForgotPassword_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:background="@android:color/transparent"
+                android:fontFamily="@font/roboto_bold"
+                android:foreground="@drawable/button_ripple"
+                android:text="I forgot my password"
+                android:textAllCaps="false"
+                android:textColor="@color/dark_gray"
+                android:textSize="20dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/SignIn_button" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
-
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/SignIn_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="120dp"
-        android:background="@drawable/green_large_button"
-        android:fontFamily="@font/roboto_bold"
-        android:foreground="@drawable/button_ripple"
-        android:text="Sign In"
-        android:textAllCaps="false"
-        android:textColor="@color/black"
-        android:textSize="20dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/ForgotPassword_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
-        android:layout_marginBottom="30dp"
-        android:background="@android:color/transparent"
-        android:fontFamily="@font/roboto_bold"
-        android:foreground="@drawable/button_ripple"
-        android:text="I forgot my password"
-        android:textAllCaps="false"
-        android:textColor="@color/dark_gray"
-        android:textSize="20dp"
-        app:layout_constraintBottom_toBottomOf="@+id/foreground"
-        app:layout_constraintStart_toStartOf="parent" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

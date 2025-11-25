@@ -279,17 +279,44 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         ImeUtils.addImeListener(mainView, isVisible -> {
+            View contentContainer = scrollView.getChildAt(0);
+            float density = getResources().getDisplayMetrics().density;
+            int bottomPadding = isVisible ? (int) (300 * density) : (int) (50 * density);
+            contentContainer.setPadding(0, 0, 0, bottomPadding);
+
             if (isVisible) {
-                View focusedView = getCurrentFocus();
-                if (focusedView != null && scrollView != null) {
-                    scrollView.postDelayed(() -> {
-                        Rect focusedRect = new Rect();
-                        focusedView.getHitRect(focusedRect);
-                        scrollView.requestChildRectangleOnScreen(focusedView, focusedRect, false);
-                    }, 200);
-                }
+                scrollToFocusedView(scrollView);
             }
         });
+
+        mainView.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
+            if (newFocus instanceof EditText) {
+                scrollToFocusedView(scrollView);
+            }
+        });
+    }
+
+    private void scrollToFocusedView(ScrollView scrollView) {
+        View focusedView = getCurrentFocus();
+        if (focusedView == null || scrollView == null) return;
+
+        scrollView.postDelayed(() -> {
+            Rect rect = new Rect();
+            focusedView.getHitRect(rect);
+
+            try {
+                scrollView.offsetDescendantRectToMyCoords(focusedView, rect);
+            } catch (IllegalArgumentException e) {
+                return;
+            }
+
+            int visibleHeight = scrollView.getHeight();
+            int scrollOffset = visibleHeight / 3;
+
+            int scrollToY = rect.top - scrollOffset;
+
+            scrollView.smoothScrollTo(0, Math.max(0, scrollToY));
+        }, 100);
     }
 
     @Override
