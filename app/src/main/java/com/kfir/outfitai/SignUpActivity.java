@@ -6,11 +6,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ScrollView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
-import android.widget.ImageButton;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,7 +36,25 @@ public class SignUpActivity extends AppCompatActivity {
         dbHelper = new HelperUserDB(this);
         mAuth = FirebaseAuth.getInstance();
 
+        // --- ANIMATION SETUP ---
         View backButton = findViewById(R.id.Back_button);
+        TextView welcomeText = findViewById(R.id.welcomeTo_text);
+        TextView appNameText = findViewById(R.id.OutfitAI_text);
+
+        // Form containers
+        ScrollView formScrollView = findViewById(R.id.scrollView);
+        View foreground = findViewById(R.id.foreground); // The grey background
+
+        // Header elements (Top down)
+        AnimationHelper.animateFadeInDown(backButton, 0);
+        AnimationHelper.animateFadeInDown(welcomeText, 50);
+        AnimationHelper.animateFadeInDown(appNameText, 100);
+
+        // Form + Background (Bottom up together)
+        AnimationHelper.animateSlideUp(foreground, 150);
+        AnimationHelper.animateSlideUp(formScrollView, 150);
+        // -----------------------
+
         backButton.setOnClickListener(v -> {
             finish();
             overridePendingTransition(0, 0);
