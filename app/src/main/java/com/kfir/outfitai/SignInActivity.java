@@ -36,26 +36,19 @@ public class SignInActivity extends AppCompatActivity {
         dbHelper = new HelperUserDB(this);
         mAuth = FirebaseAuth.getInstance();
 
-        // --- ANIMATION SETUP ---
-        // 1. Find Views
         View backButton = findViewById(R.id.Back_button);
         TextView welcomeText = findViewById(R.id.welcomeTo_text);
         TextView appNameText = findViewById(R.id.OutfitAI_text);
 
-        // The form container
         ScrollView formScrollView = findViewById(R.id.scrollView);
-        // The grey background shape behind the form
         View foreground = findViewById(R.id.foreground);
-
-        // 2. Animate Header Elements (Drop down from top)
+/*
         AnimationHelper.animateFadeInDown(backButton, 0);
         AnimationHelper.animateFadeInDown(welcomeText, 50);
         AnimationHelper.animateFadeInDown(appNameText, 100);
-
-        // 3. Animate the Form + Background (Slide up from bottom together)
+*/
         AnimationHelper.animateSlideUp(foreground, 150);
         AnimationHelper.animateSlideUp(formScrollView, 150);
-        // -----------------------
 
         backButton.setOnClickListener(v -> {
             finish();
