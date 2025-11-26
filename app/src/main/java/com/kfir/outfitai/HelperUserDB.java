@@ -55,16 +55,7 @@ public class HelperUserDB extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         if (oldVersion < 3) {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_HISTORY);
-            String CREATE_HISTORY_TABLE = "CREATE TABLE " + TABLE_HISTORY + "("
-                    + COLUMN_HISTORY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                    + COLUMN_HISTORY_USER_EMAIL + " TEXT,"
-                    + COLUMN_HISTORY_PERSON_URI + " TEXT,"
-                    + COLUMN_HISTORY_CLOTH_URI + " TEXT,"
-                    + COLUMN_HISTORY_RESULT_URIS + " TEXT,"
-                    + COLUMN_HISTORY_TIMESTAMP + " INTEGER" + ")";
-            db.execSQL(CREATE_HISTORY_TABLE);
         }
-
         if (oldVersion < 4) {
             try {
                 db.execSQL("ALTER TABLE " + TABLE_USERS + " ADD COLUMN " + COLUMN_USER_PROFILE_PIC + " TEXT");
@@ -74,15 +65,21 @@ public class HelperUserDB extends SQLiteOpenHelper {
         }
     }
 
-    public void addUser(User user) {
+    public void syncUser(User user) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_USER_EMAIL, user.getEmail());
         values.put(COLUMN_USER_NAME, user.getUsername());
         values.put(COLUMN_USER_PASSWORD, user.getPassword());
-        values.put(COLUMN_USER_PROFILE_PIC, user.getProfilePicUri());
-        db.insert(TABLE_USERS, null, values);
+        if (user.getProfilePicUri() != null) {
+            values.put(COLUMN_USER_PROFILE_PIC, user.getProfilePicUri());
+        }
+        db.replace(TABLE_USERS, null, values);
         db.close();
+    }
+
+    public void addUser(User user) {
+        syncUser(user);
     }
 
     public String resolveEmailFromInput(String emailOrUsername) {
@@ -124,7 +121,6 @@ public class HelperUserDB extends SQLiteOpenHelper {
 
     public boolean updateUserProfile(String currentEmail, User updatedUser) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.beginTransaction();
         try {
             ContentValues values = new ContentValues();
             values.put(COLUMN_USER_NAME, updatedUser.getUsername());
@@ -137,9 +133,7 @@ public class HelperUserDB extends SQLiteOpenHelper {
                 boolean exists = cursor.getCount() > 0;
                 cursor.close();
 
-                if (exists) {
-                    return false;
-                }
+                if (exists) return false;
 
                 values.put(COLUMN_USER_EMAIL, updatedUser.getEmail());
 
@@ -151,14 +145,11 @@ public class HelperUserDB extends SQLiteOpenHelper {
             } else {
                 db.update(TABLE_USERS, values, COLUMN_USER_EMAIL + " = ?", new String[]{currentEmail});
             }
-
-            db.setTransactionSuccessful();
             return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         } finally {
-            db.endTransaction();
             db.close();
         }
     }
@@ -171,7 +162,6 @@ public class HelperUserDB extends SQLiteOpenHelper {
         db.close();
         return count > 0;
     }
-
     public boolean checkUserCredentials(String emailOrUsername, String password) {
         SQLiteDatabase db = this.getReadableDatabase();
         String selection = "(" + COLUMN_USER_EMAIL + " = ? OR " + COLUMN_USER_NAME + " = ?) AND " + COLUMN_USER_PASSWORD + " = ?";

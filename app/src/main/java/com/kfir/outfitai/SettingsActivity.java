@@ -10,13 +10,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.view.View;
-import android.widget.EditText;
-import android.widget.ScrollView;
-import android.widget.Toast;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ScrollView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
@@ -33,6 +33,9 @@ import androidx.core.view.WindowInsetsCompat;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.google.android.material.imageview.ShapeableImageView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -42,7 +45,10 @@ public class SettingsActivity extends AppCompatActivity {
 
     private HelperUserDB dbHelper;
     private SessionManager sessionManager;
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
     private String currentEmail;
+
     private EditText editUsername, editEmail, editPassword, editConfirmPassword;
     private ShapeableImageView profileImageView;
     private ActivityResultLauncher<PickVisualMediaRequest> pickMediaLauncher;
@@ -58,6 +64,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         dbHelper = new HelperUserDB(this);
         sessionManager = new SessionManager(this);
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+
         currentEmail = sessionManager.getCurrentUserEmail();
 
         editUsername = findViewById(R.id.edit_username);
@@ -75,6 +84,7 @@ public class SettingsActivity extends AppCompatActivity {
         View logoutButton = findViewById(R.id.Logout_button);
         logoutButton.setOnClickListener(v -> {
             sessionManager.logoutUser();
+            mAuth.signOut();
             Intent intent = new Intent(SettingsActivity.this, WelcomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
@@ -111,33 +121,94 @@ public class SettingsActivity extends AppCompatActivity {
         if (user != null) {
             editUsername.setText(user.getUsername());
             editEmail.setText(user.getEmail());
-
             editPassword.setText("");
             editConfirmPassword.setText("");
-
             if (user.getProfilePicUri() != null && !user.getProfilePicUri().isEmpty()) {
                 selectedProfileUri = Uri.parse(user.getProfilePicUri());
                 displayProfileImage(selectedProfileUri);
             }
-        } else {
-            Toast.makeText(this, "Error loading user data", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void setupImagePickers() {
-        pickMediaLauncher = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
-            if (uri != null) {
-                selectedProfileUri = saveUriToInternalStorage(uri);
-                displayProfileImage(selectedProfileUri);
-            }
-        });
+    private void saveChanges() {
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            DialogUtils.showDialog(this, "Offline", "You must be online to update settings.");
+            return;
+        }
 
-        takePictureLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
-            if (success) {
-                selectedProfileUri = saveUriToInternalStorage(tempImageUri);
-                displayProfileImage(selectedProfileUri);
-            }
-        });
+        String newUsername = editUsername.getText().toString().trim();
+        String newEmail = editEmail.getText().toString().trim();
+        String newPassword = editPassword.getText().toString().trim();
+        String confirmPassword = editConfirmPassword.getText().toString().trim();
+
+        editUsername.setError(null); editEmail.setError(null); editPassword.setError(null); editConfirmPassword.setError(null);
+
+        if (newUsername.isEmpty()) { editUsername.setError("Username cannot be empty"); return; }
+        if (newEmail.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) { editEmail.setError("Invalid Email"); return; }
+
+        User currentUser = dbHelper.getUserDetails(currentEmail);
+        String finalPassword = currentUser.getPassword();
+
+        if (!newPassword.isEmpty()) {
+            if (newPassword.length() < 8) { editPassword.setError("Minimum 8 characters"); return; }
+            if (!newPassword.equals(confirmPassword)) { editConfirmPassword.setError("Passwords do not match"); return; }
+            finalPassword = newPassword;
+        }
+
+        boolean usernameChanged = !newUsername.equals(currentUser.getUsername());
+
+        if (usernameChanged) {
+            String finalP = finalPassword;
+            db.collection("users").whereEqualTo("username", newUsername).get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                            editUsername.setError("Username already taken");
+                        } else {
+                            proceedWithUpdates(newUsername, newEmail, finalP, currentUser);
+                        }
+                    });
+        } else {
+            proceedWithUpdates(newUsername, newEmail, finalPassword, currentUser);
+        }
+    }
+
+    private void proceedWithUpdates(String newUsername, String newEmail, String newPassword, User currentUser) {
+        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+        if (firebaseUser == null) {
+            DialogUtils.showDialog(this, "Error", "Authentication session expired. Please login again.");
+            return;
+        }
+
+        if (!newEmail.equals(currentUser.getEmail())) {
+            firebaseUser.verifyBeforeUpdateEmail(newEmail);
+            DialogUtils.showDialog(this, "Notice", "Email update verification sent. Please confirm in your inbox.");
+        }
+
+        if (!newPassword.equals(currentUser.getPassword())) {
+            firebaseUser.updatePassword(newPassword);
+        }
+
+        db.collection("users").document(firebaseUser.getUid())
+                .update("username", newUsername, "email", newEmail)
+                .addOnSuccessListener(aVoid -> {
+                    User updatedUser = new User();
+                    updatedUser.setUsername(newUsername);
+                    updatedUser.setEmail(newEmail);
+                    updatedUser.setPassword(newPassword);
+                    updatedUser.setProfilePicUri(selectedProfileUri != null ? selectedProfileUri.toString() : currentUser.getProfilePicUri());
+
+                    if (dbHelper.updateUserProfile(currentEmail, updatedUser)) {
+                        DialogUtils.showDialog(this, "Success", "Profile Updated Successfully!", () -> {
+                            if (!currentEmail.equals(newEmail)) {
+                                sessionManager.logoutUser();
+                                sessionManager.createLoginSession(newEmail);
+                                currentEmail = newEmail;
+                            }
+                            loadUserData();
+                        });
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to update cloud profile", Toast.LENGTH_SHORT).show());
     }
 
     private void setupPasswordToggle(EditText editText, ImageButton button) {
@@ -158,6 +229,22 @@ public class SettingsActivity extends AppCompatActivity {
     private void displayProfileImage(Uri uri) {
         profileImageView.setImageTintList(null);
         Glide.with(this).load(uri).transform(new CircleCrop()).into(profileImageView);
+    }
+
+    private void setupImagePickers() {
+        pickMediaLauncher = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+            if (uri != null) {
+                selectedProfileUri = saveUriToInternalStorage(uri);
+                displayProfileImage(selectedProfileUri);
+            }
+        });
+
+        takePictureLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
+            if (success) {
+                selectedProfileUri = saveUriToInternalStorage(tempImageUri);
+                displayProfileImage(selectedProfileUri);
+            }
+        });
     }
 
     private void showImagePickerDialog() {
@@ -227,96 +314,36 @@ public class SettingsActivity extends AppCompatActivity {
         } catch (Exception e) { e.printStackTrace(); return sourceUri; }
     }
 
-    private void saveChanges() {
-        String newUsername = editUsername.getText().toString().trim();
-        String newEmail = editEmail.getText().toString().trim();
-        String newPassword = editPassword.getText().toString().trim();
-        String confirmPassword = editConfirmPassword.getText().toString().trim();
-
-        editUsername.setError(null); editEmail.setError(null); editPassword.setError(null); editConfirmPassword.setError(null);
-
-        if (newUsername.isEmpty()) { editUsername.setError("Username cannot be empty"); return; }
-        if (newEmail.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) { editEmail.setError("Invalid Email"); return; }
-
-        String finalPassword;
-        User currentUser = dbHelper.getUserDetails(currentEmail);
-
-        if (newPassword.isEmpty()) {
-            finalPassword = currentUser.getPassword();
-        } else {
-            if (newPassword.length() < 8) { editPassword.setError("Minimum 8 characters"); return; }
-            if (!newPassword.equals(confirmPassword)) { editConfirmPassword.setError("Passwords do not match"); return; }
-            finalPassword = newPassword;
-        }
-
-        User updatedUser = new User();
-        updatedUser.setUsername(newUsername);
-        updatedUser.setEmail(newEmail);
-        updatedUser.setPassword(finalPassword);
-        updatedUser.setProfilePicUri(selectedProfileUri != null ? selectedProfileUri.toString() : currentUser.getProfilePicUri());
-
-        if (dbHelper.updateUserProfile(currentEmail, updatedUser)) {
-            DialogUtils.showDialog(this, "Success", "Profile Updated Successfully!", () -> {
-                if (!currentEmail.equals(newEmail)) {
-                    sessionManager.logoutUser();
-                    sessionManager.createLoginSession(newEmail);
-                    currentEmail = newEmail;
-                }
-                loadUserData();
-            });
-            loadUserData();
-        } else {
-            DialogUtils.showDialog(this, "Update Failed", "Could not update profile. Please try again.");
-        }
-    }
-
     private void setupKeyboardHandling() {
         View mainView = findViewById(R.id.main);
         final ScrollView scrollView = findViewById(R.id.scrollView);
-
         ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom);
             return insets;
         });
-
         ImeUtils.addImeListener(mainView, isVisible -> {
             View contentContainer = scrollView.getChildAt(0);
             float density = getResources().getDisplayMetrics().density;
             int bottomPadding = isVisible ? (int) (300 * density) : (int) (50 * density);
             contentContainer.setPadding(0, 0, 0, bottomPadding);
-
-            if (isVisible) {
-                scrollToFocusedView(scrollView);
-            }
+            if (isVisible) scrollToFocusedView(scrollView);
         });
-
         mainView.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
-            if (newFocus instanceof EditText) {
-                scrollToFocusedView(scrollView);
-            }
+            if (newFocus instanceof EditText) scrollToFocusedView(scrollView);
         });
     }
 
     private void scrollToFocusedView(ScrollView scrollView) {
         View focusedView = getCurrentFocus();
         if (focusedView == null || scrollView == null) return;
-
         scrollView.postDelayed(() -> {
             Rect rect = new Rect();
             focusedView.getHitRect(rect);
-
-            try {
-                scrollView.offsetDescendantRectToMyCoords(focusedView, rect);
-            } catch (IllegalArgumentException e) {
-                return;
-            }
-
+            try { scrollView.offsetDescendantRectToMyCoords(focusedView, rect); } catch (IllegalArgumentException e) { return; }
             int visibleHeight = scrollView.getHeight();
             int scrollOffset = visibleHeight / 3;
-
             int scrollToY = rect.top - scrollOffset;
-
             scrollView.smoothScrollTo(0, Math.max(0, scrollToY));
         }, 100);
     }

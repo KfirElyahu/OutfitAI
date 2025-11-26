@@ -9,7 +9,6 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
 
@@ -21,12 +20,17 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SignUpActivity extends AppCompatActivity {
 
     private static final String TAG = "SignUpActivity";
     private HelperUserDB dbHelper;
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,21 +39,14 @@ public class SignUpActivity extends AppCompatActivity {
 
         dbHelper = new HelperUserDB(this);
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         View backButton = findViewById(R.id.Back_button);
-        TextView welcomeText = findViewById(R.id.welcomeTo_text);
-        TextView appNameText = findViewById(R.id.OutfitAI_text);
-
         ScrollView formScrollView = findViewById(R.id.scrollView);
         View foreground = findViewById(R.id.foreground);
 
-/*
-        AnimationHelper.animateFadeInDown(backButton, 0);
-        AnimationHelper.animateFadeInDown(welcomeText, 50);
-        AnimationHelper.animateFadeInDown(appNameText, 100);
-*/
-        AnimationHelper.animateSlideUp(foreground, 150);
-        AnimationHelper.animateSlideUp(formScrollView, 150);
+        AnimationHelper.animateSlideUp(foreground, 0);
+        AnimationHelper.animateSlideUp(formScrollView, 0);
 
         backButton.setOnClickListener(v -> {
             finish();
@@ -94,6 +91,11 @@ public class SignUpActivity extends AppCompatActivity {
     }
 
     private void validateSignUp() {
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            DialogUtils.showDialog(this, "No Internet", "You must be online to sign up.");
+            return;
+        }
+
         EditText usernameInput = findViewById(R.id.Username_textInput);
         EditText emailInput = findViewById(R.id.Email_textInput);
         EditText passwordInput = findViewById(R.id.Password_textInput);
@@ -115,67 +117,93 @@ public class SignUpActivity extends AppCompatActivity {
             usernameInput.setError("Field can't be empty");
             isValid = false;
         }
-
         if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             emailInput.setError("Please enter a valid email address");
             isValid = false;
         }
-
         if (password.length() < 6) {
             passwordInput.setError("Password must be at least 6 characters long");
             isValid = false;
         }
-
         if (!password.equals(confirmPassword)) {
             confirmPasswordInput.setError("Passwords do not match");
             isValid = false;
         }
 
-        if (isValid) {
-            mAuth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(this, task -> {
-                        if (task.isSuccessful()) {
-                            Log.d(TAG, "createUserWithEmail:success");
-                            FirebaseUser firebaseUser = mAuth.getCurrentUser();
+        if (!isValid) return;
 
-                            if (firebaseUser != null) {
-                                firebaseUser.sendEmailVerification()
-                                        .addOnCompleteListener(emailTask -> {
-                                            if (emailTask.isSuccessful()) {
-                                                if (!dbHelper.checkUserExists(email)) {
-                                                    User newUser = new User();
-                                                    newUser.setUsername(username);
-                                                    newUser.setEmail(email);
-                                                    newUser.setPassword(password);
-                                                    dbHelper.addUser(newUser);
-                                                }
+        View signUpButton = findViewById(R.id.SignUp_button);
+        signUpButton.setEnabled(false);
 
-                                                DialogUtils.showDialog(SignUpActivity.this, "Account Created",
-                                                        "Verification email sent to " + email + ". Please verify before logging in.",
-                                                        () -> {
-                                                            Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
-                                                            startActivity(intent);
-                                                            finish();
-                                                        });
-
-                                            } else {
-                                                Log.e(TAG, "sendEmailVerification", emailTask.getException());
-                                                DialogUtils.showDialog(SignUpActivity.this, "Error", "Failed to send verification email.");
-                                            }
-                                        });
-                            }
+        db.collection("users")
+                .whereEqualTo("username", username)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (!task.getResult().isEmpty()) {
+                            usernameInput.setError("Username is already taken");
+                            signUpButton.setEnabled(true);
                         } else {
-                            Log.w(TAG, "createUserWithEmail:failure", task.getException());
-                            String errorMsg = task.getException() != null ? task.getException().getMessage() : "Authentication failed.";
-                            if (errorMsg.contains("already in use")) {
-                                emailInput.setError("Email already registered");
-                                DialogUtils.showDialog(SignUpActivity.this, "Sign Up Failed", "This email is already registered.");
-                            } else {
-                                DialogUtils.showDialog(SignUpActivity.this, "Sign Up Failed", errorMsg);
-                            }
+                            createFirebaseAuthAccount(username, email, password, signUpButton);
                         }
-                    });
-        }
+                    } else {
+                        DialogUtils.showDialog(this, "Error", "Could not check username availability.");
+                        signUpButton.setEnabled(true);
+                    }
+                });
+    }
+
+    private void createFirebaseAuthAccount(String username, String email, String password, View button) {
+        mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "createUserWithEmail:success");
+                        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+
+                        if (firebaseUser != null) {
+                            Map<String, Object> userMap = new HashMap<>();
+                            userMap.put("username", username);
+                            userMap.put("email", email);
+
+                            db.collection("users").document(firebaseUser.getUid())
+                                    .set(userMap)
+                                    .addOnSuccessListener(aVoid -> {
+                                        User newUser = new User();
+                                        newUser.setUsername(username);
+                                        newUser.setEmail(email);
+                                        newUser.setPassword(password);
+                                        dbHelper.syncUser(newUser);
+
+                                        sendVerificationEmail(firebaseUser, email);
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        DialogUtils.showDialog(SignUpActivity.this, "Error", "Account created but profile setup failed.");
+                                    });
+                        }
+                    } else {
+                        button.setEnabled(true);
+                        Log.w(TAG, "createUserWithEmail:failure", task.getException());
+                        String errorMsg = task.getException() != null ? task.getException().getMessage() : "Authentication failed.";
+                        if (errorMsg != null && errorMsg.contains("already in use")) {
+                            ((EditText)findViewById(R.id.Email_textInput)).setError("Email already registered");
+                        } else {
+                            DialogUtils.showDialog(SignUpActivity.this, "Sign Up Failed", errorMsg);
+                        }
+                    }
+                });
+    }
+
+    private void sendVerificationEmail(FirebaseUser user, String email) {
+        user.sendEmailVerification()
+                .addOnCompleteListener(task -> {
+                    DialogUtils.showDialog(SignUpActivity.this, "Account Created",
+                            "Verification email sent to " + email + ". Please verify before logging in.",
+                            () -> {
+                                Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
+                                startActivity(intent);
+                                finish();
+                            });
+                });
     }
 
     private void setupKeyboardHandlingForForms() {
@@ -198,33 +226,20 @@ public class SignUpActivity extends AppCompatActivity {
                 scrollToFocusedView(scrollView);
             }
         });
-
-        mainView.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
-            if (newFocus instanceof EditText) {
-                scrollToFocusedView(scrollView);
-            }
-        });
     }
 
     private void scrollToFocusedView(ScrollView scrollView) {
         View focusedView = getCurrentFocus();
         if (focusedView == null || scrollView == null) return;
-
         scrollView.postDelayed(() -> {
             Rect rect = new Rect();
             focusedView.getHitRect(rect);
-
             try {
                 scrollView.offsetDescendantRectToMyCoords(focusedView, rect);
-            } catch (IllegalArgumentException e) {
-                return;
-            }
-
+            } catch (IllegalArgumentException e) { return; }
             int visibleHeight = scrollView.getHeight();
             int scrollOffset = visibleHeight / 3;
-
             int scrollToY = rect.top - scrollOffset;
-
             scrollView.smoothScrollTo(0, Math.max(0, scrollToY));
         }, 100);
     }

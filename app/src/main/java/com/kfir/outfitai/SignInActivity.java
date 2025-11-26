@@ -21,12 +21,15 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 public class SignInActivity extends AppCompatActivity {
 
     private static final String TAG = "SignInActivity";
     private HelperUserDB dbHelper;
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,20 +38,14 @@ public class SignInActivity extends AppCompatActivity {
 
         dbHelper = new HelperUserDB(this);
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         View backButton = findViewById(R.id.Back_button);
-        TextView welcomeText = findViewById(R.id.welcomeTo_text);
-        TextView appNameText = findViewById(R.id.OutfitAI_text);
-
         ScrollView formScrollView = findViewById(R.id.scrollView);
         View foreground = findViewById(R.id.foreground);
-/*
-        AnimationHelper.animateFadeInDown(backButton, 0);
-        AnimationHelper.animateFadeInDown(welcomeText, 50);
-        AnimationHelper.animateFadeInDown(appNameText, 100);
-*/
-        AnimationHelper.animateSlideUp(foreground, 150);
-        AnimationHelper.animateSlideUp(formScrollView, 150);
+
+        AnimationHelper.animateSlideUp(foreground, 0);
+        AnimationHelper.animateSlideUp(formScrollView, 0);
 
         backButton.setOnClickListener(v -> {
             finish();
@@ -56,7 +53,7 @@ public class SignInActivity extends AppCompatActivity {
         });
 
         View signInButton = findViewById(R.id.SignIn_button);
-        signInButton.setOnClickListener(v -> validateSignIn());
+        signInButton.setOnClickListener(v -> handleSignIn());
 
         View forgotPasswordButton = findViewById(R.id.ForgotPassword_button);
         forgotPasswordButton.setOnClickListener(v -> sendPasswordReset());
@@ -92,30 +89,41 @@ public class SignInActivity extends AppCompatActivity {
     }
 
     private void sendPasswordReset() {
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            DialogUtils.showDialog(this, "No Internet", "Connect to internet to reset password.");
+            return;
+        }
+
         EditText emailOrUsernameInput = findViewById(R.id.UsernameOrEmail_textInput);
         String input = emailOrUsernameInput.getText().toString().trim();
 
-        String email = dbHelper.resolveEmailFromInput(input);
-        if (email == null) {
-            email = input;
-        }
-
-        if (email.isEmpty()) {
+        if (input.isEmpty()) {
             emailOrUsernameInput.setError("Enter email to reset password");
             return;
         }
 
-        mAuth.sendPasswordResetEmail(email)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        DialogUtils.showDialog(SignInActivity.this, "Check Email", "Reset link sent to " + input);
-                    } else {
-                        DialogUtils.showDialog(SignInActivity.this, "Error", "Failed to send reset email. Check if account exists.");
-                    }
-                });
+        if (android.util.Patterns.EMAIL_ADDRESS.matcher(input).matches()) {
+            mAuth.sendPasswordResetEmail(input)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            DialogUtils.showDialog(SignInActivity.this, "Check Email", "Reset link sent.");
+                        } else {
+                            DialogUtils.showDialog(SignInActivity.this, "Error", "Failed to send reset email.");
+                        }
+                    });
+        } else {
+            db.collection("users").whereEqualTo("username", input).get().addOnCompleteListener(task -> {
+                if(task.isSuccessful() && !task.getResult().isEmpty()) {
+                    String email = task.getResult().getDocuments().get(0).getString("email");
+                    mAuth.sendPasswordResetEmail(email).addOnSuccessListener(v -> DialogUtils.showDialog(this, "Check Email", "Reset link sent to associated email."));
+                } else {
+                    DialogUtils.showDialog(this, "Error", "Could not find account.");
+                }
+            });
+        }
     }
 
-    private void validateSignIn() {
+    private void handleSignIn() {
         EditText emailOrUsernameInput = findViewById(R.id.UsernameOrEmail_textInput);
         EditText passwordInput = findViewById(R.id.Password_textInput);
 
@@ -129,50 +137,118 @@ public class SignInActivity extends AppCompatActivity {
             emailOrUsernameInput.setError("Field can't be empty");
             return;
         }
-
         if (password.isEmpty()) {
             passwordInput.setError("Field can't be empty");
             return;
         }
 
-        String resolvedEmail = dbHelper.resolveEmailFromInput(emailOrUsername);
-        if (resolvedEmail == null) {
-            resolvedEmail = emailOrUsername;
+        View signInButton = findViewById(R.id.SignIn_button);
+        signInButton.setEnabled(false);
+
+        if (NetworkUtils.isNetworkAvailable(this)) {
+            performOnlineLogin(emailOrUsername, password, signInButton);
+        } else {
+            performOfflineLogin(emailOrUsername, password, signInButton);
         }
+    }
 
-        final String finalEmail = resolvedEmail;
+    private void performOfflineLogin(String input, String password, View button) {
+        if (dbHelper.checkUserCredentials(input, password)) {
+            String email = dbHelper.resolveEmailFromInput(input);
+            if (email == null) email = input;
 
-        mAuth.signInWithEmailAndPassword(finalEmail, password)
+            completeLogin(email);
+        } else {
+            DialogUtils.showDialog(this, "Offline Login Failed", "Invalid credentials or account not saved on this device.");
+            button.setEnabled(true);
+        }
+    }
+
+    private void performOnlineLogin(String input, String password, View button) {
+        if (android.util.Patterns.EMAIL_ADDRESS.matcher(input).matches()) {
+            signInWithFirebase(input, password, null, button);
+        } else {
+            db.collection("users")
+                    .whereEqualTo("username", input)
+                    .get()
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            QuerySnapshot result = task.getResult();
+                            if (result != null && !result.isEmpty()) {
+                                String email = result.getDocuments().get(0).getString("email");
+                                signInWithFirebase(email, password, input, button);
+                            } else {
+                                DialogUtils.showDialog(SignInActivity.this, "Login Failed", "Username not found.");
+                                button.setEnabled(true);
+                            }
+                        } else {
+                            DialogUtils.showDialog(SignInActivity.this, "Error", "Connection failed.");
+                            button.setEnabled(true);
+                        }
+                    });
+        }
+    }
+
+    private void signInWithFirebase(String email, String password, String usernameIfKnown, View button) {
+        mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        Log.d(TAG, "signInWithEmail:success");
                         FirebaseUser user = mAuth.getCurrentUser();
-
                         if (user != null) {
-                            user.reload().addOnCompleteListener(reloadTask -> {
-                                if (user.isEmailVerified()) {
-                                    SessionManager sessionManager = new SessionManager(SignInActivity.this);
-                                    sessionManager.createLoginSession(finalEmail);
-
-                                    Toast.makeText(SignInActivity.this, "Sign in successful!", Toast.LENGTH_SHORT).show();
-
-                                    Intent intent = new Intent(SignInActivity.this, GenerateActivity.class);
-                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                    startActivity(intent);
-                                    overridePendingTransition(0, 0);
-                                    finish();
-                                } else {
-                                    mAuth.signOut();
-                                    DialogUtils.showDialog(SignInActivity.this, "Verification Required", "Email not verified. Please check your inbox.");
-                                }
-                            });
+                            if (user.isEmailVerified()) {
+                                syncCloudToLocal(user, email, password, usernameIfKnown);
+                            } else {
+                                mAuth.signOut();
+                                DialogUtils.showDialog(SignInActivity.this, "Verification Required", "Email not verified. Please check your inbox.");
+                                button.setEnabled(true);
+                            }
                         }
                     } else {
-                        Log.w(TAG, "signInWithEmail:failure", task.getException());
-                        Toast.makeText(SignInActivity.this, "Authentication failed. Check credentials.",
-                                Toast.LENGTH_SHORT).show();
+                        button.setEnabled(true);
+                        Toast.makeText(SignInActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void syncCloudToLocal(FirebaseUser firebaseUser, String email, String password, String knownUsername) {
+        if (knownUsername == null) {
+            db.collection("users").document(firebaseUser.getUid()).get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        String fetchedUsername = documentSnapshot.getString("username");
+                        if (fetchedUsername == null) fetchedUsername = email.split("@")[0];
+
+                        saveToLocalAndFinish(email, fetchedUsername, password);
+                    })
+                    .addOnFailureListener(e -> {
+                        saveToLocalAndFinish(email, email.split("@")[0], password);
+                    });
+        } else {
+            saveToLocalAndFinish(email, knownUsername, password);
+        }
+    }
+
+    private void saveToLocalAndFinish(String email, String username, String password) {
+        User syncedUser = new User();
+        syncedUser.setEmail(email);
+        syncedUser.setUsername(username);
+        syncedUser.setPassword(password);
+
+        dbHelper.syncUser(syncedUser);
+
+        completeLogin(email);
+    }
+
+    private void completeLogin(String email) {
+        SessionManager sessionManager = new SessionManager(SignInActivity.this);
+        sessionManager.createLoginSession(email);
+
+        Toast.makeText(SignInActivity.this, "Sign in successful!", Toast.LENGTH_SHORT).show();
+
+        Intent intent = new Intent(SignInActivity.this, GenerateActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        overridePendingTransition(0, 0);
+        finish();
     }
 
     private void setupKeyboardHandlingForForms() {
@@ -181,25 +257,17 @@ public class SignInActivity extends AppCompatActivity {
 
         ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom);
             return insets;
         });
 
         ImeUtils.addImeListener(mainView, isVisible -> {
             View contentContainer = scrollView.getChildAt(0);
             float density = getResources().getDisplayMetrics().density;
-
             int bottomPadding = isVisible ? (int) (300 * density) : (int) (50 * density);
-
             contentContainer.setPadding(0, 0, 0, bottomPadding);
 
             if (isVisible) {
-                scrollToFocusedView(scrollView);
-            }
-        });
-
-        mainView.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
-            if (newFocus instanceof EditText) {
                 scrollToFocusedView(scrollView);
             }
         });
@@ -208,22 +276,15 @@ public class SignInActivity extends AppCompatActivity {
     private void scrollToFocusedView(ScrollView scrollView) {
         View focusedView = getCurrentFocus();
         if (focusedView == null || scrollView == null) return;
-
         scrollView.postDelayed(() -> {
             Rect rect = new Rect();
             focusedView.getHitRect(rect);
-
             try {
                 scrollView.offsetDescendantRectToMyCoords(focusedView, rect);
-            } catch (IllegalArgumentException e) {
-                return;
-            }
-
+            } catch (IllegalArgumentException e) { return; }
             int visibleHeight = scrollView.getHeight();
             int scrollOffset = visibleHeight / 3;
-
             int scrollToY = rect.top - scrollOffset;
-
             scrollView.smoothScrollTo(0, Math.max(0, scrollToY));
         }, 100);
     }
