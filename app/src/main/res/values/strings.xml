@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">OutfitAI</string>
+    <string name="brand_name_main">OutfitAI</string>
+    <string name="brand_name_suffix"></string>
 
     <string name="common_back">Back</string>
     <string name="common_ok">OK</string>
@@ -9,7 +11,7 @@
     <string name="common_selection">Selection</string>
     <string name="common_gallery">Gallery</string>
     <string name="common_camera">Camera</string>
-    <string name="common_loading">Loading</string>
+    <string name="common_loading">Loading...</string>
     <string name="common_cancel">Cancel</string>
 
     <string name="desc_go_back">Go Back</string>
@@ -142,8 +144,5 @@
     <string name="save_success_gallery">Image saved to Gallery successfully!</string>
     <string name="save_error_gallery_failed">Could not save image to gallery.</string>
     <string name="save_error_failed_title">Failed</string>
-
-    <string name="dialog_placeholder_title">Title</string>
-    <string name="dialog_placeholder_message">Message goes here...</string>
 
 </resources>

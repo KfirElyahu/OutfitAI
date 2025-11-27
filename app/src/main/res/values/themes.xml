@@ -1,7 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Base.Theme.OutfitAI" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:fontFamily">@font/rubik_bold</item>
     </style>
+
     <style name="Theme.OutfitAI" parent="Base.Theme.OutfitAI" />
+
     <style name="roundedImageView">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">15dp</item>
