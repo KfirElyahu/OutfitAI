@@ -43,7 +43,7 @@
         android:background="@drawable/green_large_button"
         android:fontFamily="@font/roboto_bold"
         android:foreground="@drawable/button_ripple"
-        android:text="OK"
+        android:text="@string/common_ok"
         android:textAllCaps="false"
         android:textColor="@color/black"
         android:textSize="18sp"

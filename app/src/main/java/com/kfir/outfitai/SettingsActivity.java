@@ -108,7 +108,7 @@ public class SettingsActivity extends AppCompatActivity {
         if (currentEmail == null || currentEmail.isEmpty() || currentEmail.equals("guest_user")) {
             findViewById(R.id.form_container).setVisibility(View.GONE);
             findViewById(R.id.profile_image_clickable).setEnabled(false);
-            DialogUtils.showDialog(this, "Guest Mode", "Guest accounts cannot change settings.");
+            DialogUtils.showDialog(this, getString(R.string.settings_error_guest_title), getString(R.string.settings_error_guest_msg));
         } else {
             loadUserData();
             setupImagePickers();
@@ -132,7 +132,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void saveChanges() {
         if (!NetworkUtils.isNetworkAvailable(this)) {
-            DialogUtils.showDialog(this, "Offline", "You must be online to update settings.");
+            DialogUtils.showDialog(this, getString(R.string.settings_error_offline_title), getString(R.string.settings_error_offline_msg));
             return;
         }
 
@@ -143,15 +143,15 @@ public class SettingsActivity extends AppCompatActivity {
 
         editUsername.setError(null); editEmail.setError(null); editPassword.setError(null); editConfirmPassword.setError(null);
 
-        if (newUsername.isEmpty()) { editUsername.setError("Username cannot be empty"); return; }
-        if (newEmail.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) { editEmail.setError("Invalid Email"); return; }
+        if (newUsername.isEmpty()) { editUsername.setError(getString(R.string.settings_error_username_empty)); return; }
+        if (newEmail.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) { editEmail.setError(getString(R.string.settings_error_email_invalid)); return; }
 
         User currentUser = dbHelper.getUserDetails(currentEmail);
         String finalPassword = currentUser.getPassword();
 
         if (!newPassword.isEmpty()) {
-            if (newPassword.length() < 8) { editPassword.setError("Minimum 8 characters"); return; }
-            if (!newPassword.equals(confirmPassword)) { editConfirmPassword.setError("Passwords do not match"); return; }
+            if (newPassword.length() < 8) { editPassword.setError(getString(R.string.settings_error_pass_short)); return; }
+            if (!newPassword.equals(confirmPassword)) { editConfirmPassword.setError(getString(R.string.settings_error_pass_mismatch)); return; }
             finalPassword = newPassword;
         }
 
@@ -162,7 +162,7 @@ public class SettingsActivity extends AppCompatActivity {
             db.collection("users").whereEqualTo("username", newUsername).get()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful() && !task.getResult().isEmpty()) {
-                            editUsername.setError("Username already taken");
+                            editUsername.setError(getString(R.string.settings_error_username_taken));
                         } else {
                             proceedWithUpdates(newUsername, newEmail, finalP, currentUser);
                         }
@@ -175,13 +175,13 @@ public class SettingsActivity extends AppCompatActivity {
     private void proceedWithUpdates(String newUsername, String newEmail, String newPassword, User currentUser) {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
         if (firebaseUser == null) {
-            DialogUtils.showDialog(this, "Error", "Authentication session expired. Please login again.");
+            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_auth_expired));
             return;
         }
 
         if (!newEmail.equals(currentUser.getEmail())) {
             firebaseUser.verifyBeforeUpdateEmail(newEmail);
-            DialogUtils.showDialog(this, "Notice", "Email update verification sent. Please confirm in your inbox.");
+            DialogUtils.showDialog(this, getString(R.string.settings_error_auth_expired), getString(R.string.settings_msg_email_verify));
         }
 
         if (!newPassword.equals(currentUser.getPassword())) {
@@ -198,7 +198,7 @@ public class SettingsActivity extends AppCompatActivity {
                     updatedUser.setProfilePicUri(selectedProfileUri != null ? selectedProfileUri.toString() : currentUser.getProfilePicUri());
 
                     if (dbHelper.updateUserProfile(currentEmail, updatedUser)) {
-                        DialogUtils.showDialog(this, "Success", "Profile Updated Successfully!", () -> {
+                        DialogUtils.showDialog(this, getString(R.string.common_success), getString(R.string.settings_msg_update_success), () -> {
                             if (!currentEmail.equals(newEmail)) {
                                 sessionManager.logoutUser();
                                 sessionManager.createLoginSession(newEmail);
@@ -208,7 +208,7 @@ public class SettingsActivity extends AppCompatActivity {
                         });
                     }
                 })
-                .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "Failed to update cloud profile", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, getString(R.string.settings_error_update_failed), Toast.LENGTH_SHORT).show());
     }
 
     private void setupPasswordToggle(EditText editText, ImageButton button) {
@@ -249,8 +249,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void showImagePickerDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Change Profile Picture");
-        builder.setItems(new CharSequence[]{"Gallery", "Camera"}, (dialog, which) -> {
+        builder.setTitle(getString(R.string.settings_dialog_pic_title));
+        builder.setItems(new CharSequence[]{getString(R.string.common_gallery), getString(R.string.common_camera)}, (dialog, which) -> {
             switch (which) {
                 case 0:
                     pickMediaLauncher.launch(new PickVisualMediaRequest.Builder()
@@ -267,7 +267,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void checkCameraPermissionAndOpenCamera() {
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-            DialogUtils.showDialog(this, "Error", "No camera found.");
+            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_no_camera));
             return;
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -280,7 +280,7 @@ public class SettingsActivity extends AppCompatActivity {
     private void openCamera() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (cameraIntent.resolveActivity(getPackageManager()) == null) {
-            DialogUtils.showDialog(this, "Error", "No camera app found.");
+            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_no_camera_app));
             return;
         }
         tempImageUri = createImageUri();

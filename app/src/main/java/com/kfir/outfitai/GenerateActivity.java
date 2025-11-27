@@ -184,7 +184,9 @@ public class GenerateActivity extends AppCompatActivity {
                 Uri persistentUri = saveUriToInternalStorage(uri);
                 displaySelectedImage(persistentUri);
             } else {
-                DialogUtils.showDialog(this, "Selection", "No image selected");
+                DialogUtils.showDialog(this,
+                        getString(R.string.common_selection),
+                        getString(R.string.generate_msg_no_image));
             }
         });
 
@@ -193,7 +195,7 @@ public class GenerateActivity extends AppCompatActivity {
                 Uri persistentUri = saveUriToInternalStorage(tempImageUri);
                 displaySelectedImage(persistentUri);
             } else {
-                DialogUtils.showDialog(this, "Camera Error", "Failed to capture image.");
+                DialogUtils.showDialog(this, getString(R.string.generate_error_camera_title), getString(R.string.generate_error_camera_capture));
             }
         });
     }
@@ -225,8 +227,8 @@ public class GenerateActivity extends AppCompatActivity {
 
     private void showImagePickerDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Choose Image Source");
-        builder.setItems(new CharSequence[]{"Gallery", "Camera"}, (dialog, which) -> {
+        builder.setTitle(getString(R.string.generate_dialog_title_source));
+        builder.setItems(new CharSequence[]{getString(R.string.common_gallery), getString(R.string.common_camera)}, (dialog, which) -> {
             switch (which) {
                 case 0:
                     pickMediaLauncher.launch(new PickVisualMediaRequest.Builder()
@@ -288,7 +290,7 @@ public class GenerateActivity extends AppCompatActivity {
         ListView listView = new ListView(this);
 
         TextView tryAllButton = new TextView(this);
-        tryAllButton.setText("Try All Prompts");
+        tryAllButton.setText(getString(R.string.prompt_try_all));
         tryAllButton.setTextSize(18);
         tryAllButton.setPadding(30, 40, 30, 40);
         tryAllButton.setGravity(Gravity.CENTER);
@@ -300,7 +302,7 @@ public class GenerateActivity extends AppCompatActivity {
 
         List<String> displayList = new ArrayList<>();
         for (int i = 0; i < availablePrompts.size(); i++) {
-            displayList.add("Prompt " + (i + 1));
+            displayList.add(getString(R.string.prompt_item_name, (i + 1)));
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, displayList) {
@@ -333,7 +335,7 @@ public class GenerateActivity extends AppCompatActivity {
 
         tryAllButton.setOnClickListener(v -> {
             isTryAllMode = true;
-            Toast.makeText(GenerateActivity.this, "Selected: Try All Prompts", Toast.LENGTH_SHORT).show();
+            Toast.makeText(GenerateActivity.this, getString(R.string.prompt_msg_selected_all), Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
 
@@ -346,7 +348,7 @@ public class GenerateActivity extends AppCompatActivity {
 
                 userPrefs.edit().putInt("last_prompt_index", selectedPromptIndex).apply();
 
-                Toast.makeText(GenerateActivity.this, "Selected: Prompt " + (promptIndex + 1), Toast.LENGTH_SHORT).show();
+                Toast.makeText(GenerateActivity.this, getString(R.string.prompt_msg_selected_one, (promptIndex + 1)), Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             }
         });
@@ -356,7 +358,9 @@ public class GenerateActivity extends AppCompatActivity {
 
     private void generateOutfit() {
         if (selectedPersonUri == null || selectedClothingUri == null) {
-            DialogUtils.showDialog(this, "Missing Images", "Please select both a person and clothing image before generating.");
+            DialogUtils.showDialog(this,
+                    getString(R.string.generate_error_missing_images_title),
+                    getString(R.string.generate_error_missing_images_msg));
             return;
         }
 
@@ -377,7 +381,7 @@ public class GenerateActivity extends AppCompatActivity {
 
                     for (int i = 0; i < limit; i++) {
                         final int currentIdx = i;
-                        runOnUiThread(() -> loadingStageText.setText("Designing Variation " + (currentIdx + 1) + "..."));
+                        runOnUiThread(() -> loadingStageText.setText(getString(R.string.loading_stage_designing_variation, currentIdx + 1)));
 
                         byte[] resultBytes = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri, availablePrompts.get(i));
                         if (resultBytes != null) {
@@ -392,13 +396,13 @@ public class GenerateActivity extends AppCompatActivity {
                             displayGridResults(results);
                             saveToHistory(generatedGridUris);
                         } else {
-                            DialogUtils.showDialog(GenerateActivity.this, "Generation Failed", "The AI could not generate the outfits. Please try different images.");
+                            DialogUtils.showDialog(GenerateActivity.this, getString(R.string.generate_error_failed_title), getString(R.string.generate_error_failed_msg_plural));
                         }
                         generateButton.setEnabled(true);
                     });
 
                 } else {
-                    runOnUiThread(() -> loadingStageText.setText("AI is designing outfit..."));
+                    runOnUiThread(() -> loadingStageText.setText(getString(R.string.loading_stage_ai_designing)));
                     byte[] result = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri, currentPrompt);
 
                     runOnUiThread(() -> {
@@ -409,7 +413,7 @@ public class GenerateActivity extends AppCompatActivity {
                             uris.add(generatedImageUri);
                             saveToHistory(uris);
                         } else {
-                            DialogUtils.showDialog(GenerateActivity.this, "Generation Failed", "The AI could not generate the outfit. Please try different images.");
+                            DialogUtils.showDialog(GenerateActivity.this, getString(R.string.generate_error_failed_title), getString(R.string.generate_error_failed_msg));
                         }
                         generateButton.setEnabled(true);
                     });
@@ -418,7 +422,7 @@ public class GenerateActivity extends AppCompatActivity {
             } catch (Exception e) {
                 runOnUiThread(() -> {
                     stopLoadingAnimation();
-                    DialogUtils.showDialog(GenerateActivity.this, "Error", "An unexpected error occurred: " + e.getMessage());
+                    DialogUtils.showDialog(GenerateActivity.this, getString(R.string.common_error), getString(R.string.generate_error_unexpected, e.getMessage()));
                     generateButton.setEnabled(true);
                 });
             }
@@ -447,7 +451,7 @@ public class GenerateActivity extends AppCompatActivity {
         currentProgress = 0;
         startTimeMillis = System.currentTimeMillis();
         progressBar.setProgress(0);
-        loadingStageText.setText("Preparing images...");
+        loadingStageText.setText(getString(R.string.loading_stage_preparing));
 
         progressTimer = new Timer();
         progressTimer.schedule(new TimerTask() {
@@ -473,9 +477,9 @@ public class GenerateActivity extends AppCompatActivity {
 
         if (!isTryAllMode) {
             if (currentProgress > 30 && currentProgress < 60) {
-                loadingStageText.setText("We are designing your outfit...");
+                loadingStageText.setText(getString(R.string.loading_stage_designing));
             } else if (currentProgress >= 60 && currentProgress < 90) {
-                loadingStageText.setText("Still working on it..");
+                loadingStageText.setText(getString(R.string.loading_stage_working));
             }
         }
 
@@ -545,7 +549,7 @@ public class GenerateActivity extends AppCompatActivity {
         if (bitmap != null) {
             generatedImageUri = saveBitmapToCacheAndGetUri(bitmap);
             if (generatedImageUri == null) {
-                DialogUtils.showDialog(this, "Storage Error", "Failed to cache generated image.");
+                DialogUtils.showDialog(this, getString(R.string.generate_error_storage_title), getString(R.string.generate_error_cache_failed));
                 return;
             }
             generatedGridUris.add(generatedImageUri);
@@ -565,7 +569,7 @@ public class GenerateActivity extends AppCompatActivity {
                 scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
             }
         } else {
-            DialogUtils.showDialog(this, "Error", "Failed to decode the generated image.");
+            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.generate_error_decode_failed));
         }
     }
 
@@ -639,7 +643,7 @@ public class GenerateActivity extends AppCompatActivity {
 
     private void checkCameraPermissionAndOpenCamera() {
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-            DialogUtils.showDialog(this, "Error", "No camera app found on this device.");
+            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.generate_error_camera_missing));
             return;
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -655,14 +659,14 @@ public class GenerateActivity extends AppCompatActivity {
     private void openCamera() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (cameraIntent.resolveActivity(getPackageManager()) == null) {
-            DialogUtils.showDialog(this, "Error", "No camera app found on this device.");
+            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.generate_error_camera_missing));
             return;
         }
         tempImageUri = createImageUri();
         if (tempImageUri != null) {
             takePictureLauncher.launch(tempImageUri);
         } else {
-            DialogUtils.showDialog(this, "Storage Error", "Could not create temporary image file.");
+            DialogUtils.showDialog(this, getString(R.string.generate_error_storage_title), getString(R.string.generate_error_temp_file));
         }
     }
 
@@ -684,7 +688,7 @@ public class GenerateActivity extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 openCamera();
             } else {
-                DialogUtils.showDialog(this, "Permission Required", "Camera permission is required to take photos.");
+                DialogUtils.showDialog(this, getString(R.string.generate_permission_camera), getString(R.string.generate_permission_camera_msg));
             }
         } else if (requestCode == ImageSaveHelper.WRITE_STORAGE_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -694,7 +698,7 @@ public class GenerateActivity extends AppCompatActivity {
                     ImageSaveHelper.saveImageToGallery(this, generatedImageUri);
                 }
             } else {
-                DialogUtils.showDialog(this, "Permission Required", "Storage permission is required to save images.");
+                DialogUtils.showDialog(this, getString(R.string.generate_permission_camera), getString(R.string.generate_permission_storage_msg));
             }
         }
     }

@@ -15,7 +15,7 @@
     <string name="desc_go_back">חזרה אחורה</string>
     <string name="desc_save_image">שמירת תמונה</string>
 
-    <string name="welcome_to">ברוכים הבאים אל</string>
+    <string name="welcome_to">ברוכים הבאים</string>
     <string name="welcome_sign_in">התחברות</string>
     <string name="welcome_sign_up">הרשמה</string>
     <string name="welcome_skip">דלג</string>
@@ -29,6 +29,7 @@
     <string name="signin_error_empty">אי אפשר להשאיר את השדה ריק</string>
     <string name="signin_error_enter_email_reset">הקלד/י אימייל כדי לאפס את הסיסמה</string>
     <string name="signin_msg_reset_link_sent">קישור לאיפוס נשלח.</string>
+    <string name="signin_msg_reset_email_associated_title">תבדוק אימייל</string>
     <string name="signin_msg_reset_email_associated">קישור לאיפוס נשלח לאימייל המשויך לחשבון.</string>
     <string name="signin_error_reset_failed">שליחת מייל האיפוס נכשלה.</string>
     <string name="signin_error_account_not_found">לא נמצא חשבון.</string>

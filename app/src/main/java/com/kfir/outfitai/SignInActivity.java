@@ -90,7 +90,7 @@ public class SignInActivity extends AppCompatActivity {
 
     private void sendPasswordReset() {
         if (!NetworkUtils.isNetworkAvailable(this)) {
-            DialogUtils.showDialog(this, "No Internet", "Connect to internet to reset password.");
+            DialogUtils.showDialog(this, getString(R.string.signin_error_no_internet_title), getString(R.string.signin_error_no_internet_reset));
             return;
         }
 
@@ -98,7 +98,7 @@ public class SignInActivity extends AppCompatActivity {
         String input = emailOrUsernameInput.getText().toString().trim();
 
         if (input.isEmpty()) {
-            emailOrUsernameInput.setError("Enter email to reset password");
+            emailOrUsernameInput.setError(getString(R.string.signin_error_enter_email_reset));
             return;
         }
 
@@ -106,18 +106,20 @@ public class SignInActivity extends AppCompatActivity {
             mAuth.sendPasswordResetEmail(input)
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
-                            DialogUtils.showDialog(SignInActivity.this, "Check Email", "Reset link sent.");
+                            DialogUtils.showDialog(SignInActivity.this,
+                                    getString(R.string.common_notice),
+                                    getString(R.string.signin_msg_reset_link_sent));
                         } else {
-                            DialogUtils.showDialog(SignInActivity.this, "Error", "Failed to send reset email.");
+                            DialogUtils.showDialog(SignInActivity.this, getString(R.string.common_error), getString(R.string.signin_error_reset_failed));
                         }
                     });
         } else {
             db.collection("users").whereEqualTo("username", input).get().addOnCompleteListener(task -> {
                 if(task.isSuccessful() && !task.getResult().isEmpty()) {
                     String email = task.getResult().getDocuments().get(0).getString("email");
-                    mAuth.sendPasswordResetEmail(email).addOnSuccessListener(v -> DialogUtils.showDialog(this, "Check Email", "Reset link sent to associated email."));
+                    mAuth.sendPasswordResetEmail(email).addOnSuccessListener(v -> DialogUtils.showDialog(this, getString(R.string.signin_msg_reset_email_associated_title), getString(R.string.signin_msg_reset_email_associated)));
                 } else {
-                    DialogUtils.showDialog(this, "Error", "Could not find account.");
+                    DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.signin_error_account_not_found));
                 }
             });
         }
@@ -134,11 +136,11 @@ public class SignInActivity extends AppCompatActivity {
         passwordInput.setError(null);
 
         if (emailOrUsername.isEmpty()) {
-            emailOrUsernameInput.setError("Field can't be empty");
+            emailOrUsernameInput.setError(getString(R.string.signin_error_empty));
             return;
         }
         if (password.isEmpty()) {
-            passwordInput.setError("Field can't be empty");
+            passwordInput.setError(getString(R.string.signin_error_empty));
             return;
         }
 
@@ -159,7 +161,9 @@ public class SignInActivity extends AppCompatActivity {
 
             completeLogin(email);
         } else {
-            DialogUtils.showDialog(this, "Offline Login Failed", "Invalid credentials or account not saved on this device.");
+            DialogUtils.showDialog(this,
+                    getString(R.string.signin_error_offline_failed),
+                    getString(R.string.signin_error_offline_msg));
             button.setEnabled(true);
         }
     }
@@ -178,11 +182,11 @@ public class SignInActivity extends AppCompatActivity {
                                 String email = result.getDocuments().get(0).getString("email");
                                 signInWithFirebase(email, password, input, button);
                             } else {
-                                DialogUtils.showDialog(SignInActivity.this, "Login Failed", "Username not found.");
+                                DialogUtils.showDialog(SignInActivity.this, getString(R.string.signin_error_login_failed), getString(R.string.signin_error_username_not_found));
                                 button.setEnabled(true);
                             }
                         } else {
-                            DialogUtils.showDialog(SignInActivity.this, "Error", "Connection failed.");
+                            DialogUtils.showDialog(SignInActivity.this, getString(R.string.common_error), getString(R.string.signin_error_connection_failed));
                             button.setEnabled(true);
                         }
                     });
@@ -199,13 +203,13 @@ public class SignInActivity extends AppCompatActivity {
                                 syncCloudToLocal(user, email, password, usernameIfKnown);
                             } else {
                                 mAuth.signOut();
-                                DialogUtils.showDialog(SignInActivity.this, "Verification Required", "Email not verified. Please check your inbox.");
+                                DialogUtils.showDialog(SignInActivity.this, getString(R.string.signin_error_verification_required), getString(R.string.signin_msg_verification_required));
                                 button.setEnabled(true);
                             }
                         }
                     } else {
                         button.setEnabled(true);
-                        Toast.makeText(SignInActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(SignInActivity.this, getString(R.string.signin_error_auth_failed), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -242,7 +246,7 @@ public class SignInActivity extends AppCompatActivity {
         SessionManager sessionManager = new SessionManager(SignInActivity.this);
         sessionManager.createLoginSession(email);
 
-        Toast.makeText(SignInActivity.this, "Sign in successful!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(SignInActivity.this, getString(R.string.signin_success_msg), Toast.LENGTH_SHORT).show();
 
         Intent intent = new Intent(SignInActivity.this, GenerateActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

@@ -92,7 +92,9 @@ public class SignUpActivity extends AppCompatActivity {
 
     private void validateSignUp() {
         if (!NetworkUtils.isNetworkAvailable(this)) {
-            DialogUtils.showDialog(this, "No Internet", "You must be online to sign up.");
+            DialogUtils.showDialog(this,
+                    getString(R.string.signin_error_no_internet_title),
+                    getString(R.string.signup_error_no_internet_msg));
             return;
         }
 
@@ -114,19 +116,19 @@ public class SignUpActivity extends AppCompatActivity {
         boolean isValid = true;
 
         if (username.isEmpty()) {
-            usernameInput.setError("Field can't be empty");
+            usernameInput.setError(getString(R.string.signin_error_empty));
             isValid = false;
         }
         if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            emailInput.setError("Please enter a valid email address");
+            emailInput.setError(getString(R.string.signup_error_invalid_email));
             isValid = false;
         }
         if (password.length() < 6) {
-            passwordInput.setError("Password must be at least 6 characters long");
+            passwordInput.setError(getString(R.string.signup_error_password_length));
             isValid = false;
         }
         if (!password.equals(confirmPassword)) {
-            confirmPasswordInput.setError("Passwords do not match");
+            confirmPasswordInput.setError(getString(R.string.signup_error_password_match));
             isValid = false;
         }
 
@@ -141,13 +143,13 @@ public class SignUpActivity extends AppCompatActivity {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         if (!task.getResult().isEmpty()) {
-                            usernameInput.setError("Username is already taken");
+                            usernameInput.setError(getString(R.string.signup_error_username_taken));
                             signUpButton.setEnabled(true);
                         } else {
                             createFirebaseAuthAccount(username, email, password, signUpButton);
                         }
                     } else {
-                        DialogUtils.showDialog(this, "Error", "Could not check username availability.");
+                        DialogUtils.showDialog(this, getString(R.string.signup_error_check_username), getString(R.string.signup_error_check_username));
                         signUpButton.setEnabled(true);
                     }
                 });
@@ -177,7 +179,7 @@ public class SignUpActivity extends AppCompatActivity {
                                         sendVerificationEmail(firebaseUser, email);
                                     })
                                     .addOnFailureListener(e -> {
-                                        DialogUtils.showDialog(SignUpActivity.this, "Error", "Account created but profile setup failed.");
+                                        DialogUtils.showDialog(SignUpActivity.this, getString(R.string.common_error), getString(R.string.signup_error_profile_setup));
                                     });
                         }
                     } else {
@@ -185,9 +187,9 @@ public class SignUpActivity extends AppCompatActivity {
                         Log.w(TAG, "createUserWithEmail:failure", task.getException());
                         String errorMsg = task.getException() != null ? task.getException().getMessage() : "Authentication failed.";
                         if (errorMsg != null && errorMsg.contains("already in use")) {
-                            ((EditText)findViewById(R.id.Email_textInput)).setError("Email already registered");
+                            ((EditText)findViewById(R.id.Email_textInput)).setError(getString(R.string.signup_error_email_registered));
                         } else {
-                            DialogUtils.showDialog(SignUpActivity.this, "Sign Up Failed", errorMsg);
+                            DialogUtils.showDialog(SignUpActivity.this, getString(R.string.signup_error_failed), errorMsg);
                         }
                     }
                 });
@@ -196,8 +198,8 @@ public class SignUpActivity extends AppCompatActivity {
     private void sendVerificationEmail(FirebaseUser user, String email) {
         user.sendEmailVerification()
                 .addOnCompleteListener(task -> {
-                    DialogUtils.showDialog(SignUpActivity.this, "Account Created",
-                            "Verification email sent to " + email + ". Please verify before logging in.",
+                    DialogUtils.showDialog(SignUpActivity.this, getString(R.string.signup_success_created),
+                            getString(R.string.signup_msg_verification_sent, email),
                             () -> {
                                 Intent intent = new Intent(SignUpActivity.this, SignInActivity.class);
                                 startActivity(intent);

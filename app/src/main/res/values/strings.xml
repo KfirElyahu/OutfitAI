@@ -29,6 +29,7 @@
     <string name="signin_error_empty">Field can\'t be empty</string>
     <string name="signin_error_enter_email_reset">Enter email to reset password</string>
     <string name="signin_msg_reset_link_sent">Reset link sent.</string>
+    <string name="signin_msg_reset_email_associated_title">Check Email</string>
     <string name="signin_msg_reset_email_associated">Reset link sent to associated email.</string>
     <string name="signin_error_reset_failed">Failed to send reset email.</string>
     <string name="signin_error_account_not_found">Could not find account.</string>
