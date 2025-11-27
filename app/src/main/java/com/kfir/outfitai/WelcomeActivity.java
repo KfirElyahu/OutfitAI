@@ -1,6 +1,8 @@
 package com.kfir.outfitai;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -93,6 +95,9 @@ public class WelcomeActivity extends AppCompatActivity {
         Button confirmButton = view.findViewById(R.id.btn_confirm_lang);
 
         String currentCode = languageManager.getCurrentLanguageCode();
+        android.util.Log.d("LANG_DEBUG", "Dialog Opened. Manager says: " + currentCode);
+        android.util.Log.d("LANG_DEBUG", "System Locale: " + Locale.getDefault().toString());
+
         if (currentCode.equals("iw") || currentCode.equals("he")) {
             radioHebrew.setChecked(true);
         } else {
@@ -110,19 +115,25 @@ public class WelcomeActivity extends AppCompatActivity {
 
         confirmButton.setOnClickListener(v -> {
             String selectedLang = radioHebrew.isChecked() ? "he" : "en";
+            android.util.Log.d("LANG_DEBUG", "User selected: " + selectedLang);
 
             languageManager.setFirstRunCompleted();
-
-            String currentAppLang = getAppCurrentLanguage();
-            boolean isLanguageChanging = !selectedLang.equals(currentAppLang);
 
             languageManager.setLocale(selectedLang);
             dialog.dismiss();
 
-            if (isLanguageChanging) {
-            } else {
-                proceedToAppFlow();
-            }
+            Configuration config = new Configuration(getResources().getConfiguration());
+            config.setLocale(new Locale(selectedLang));
+            Context tempContext = createConfigurationContext(config);
+            String testString = tempContext.getString(R.string.welcome_sign_in);
+
+            android.util.Log.d("LANG_DEBUG", "Testing Resource Lookup for: " + selectedLang);
+            android.util.Log.d("LANG_DEBUG", "Resulting String: " + testString);
+
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                android.util.Log.d("LANG_DEBUG", "Recreating Activity...");
+                recreate();
+            }, 100);
         });
 
         dialog.show();

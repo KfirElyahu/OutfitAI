@@ -26,7 +26,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        resourceConfigurations.addAll(listOf("en", "he", "iw"))
+        //resourceConfigurations.addAll(listOf("en", "he", "iw"))
     }
 
     buildTypes {

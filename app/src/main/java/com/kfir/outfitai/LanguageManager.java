@@ -29,8 +29,12 @@ public class LanguageManager {
     }
 
     public void setLocale(String languageCode) {
+        android.util.Log.d("LANG_DEBUG", "LanguageManager setting locale to: " + languageCode);
+
         prefs.edit().putString(KEY_CURRENT_LANG, languageCode).apply();
+
         LocaleListCompat appLocale = LocaleListCompat.forLanguageTags(languageCode);
+
         AppCompatDelegate.setApplicationLocales(appLocale);
     }
 
