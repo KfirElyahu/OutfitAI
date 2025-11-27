@@ -109,7 +109,7 @@ public class WelcomeActivity extends AppCompatActivity {
         }
 
         confirmButton.setOnClickListener(v -> {
-            String selectedLang = radioHebrew.isChecked() ? "iw" : "en";
+            String selectedLang = radioHebrew.isChecked() ? "he" : "en";
 
             languageManager.setFirstRunCompleted();
 
@@ -134,7 +134,7 @@ public class WelcomeActivity extends AppCompatActivity {
             return locales.get(0).getLanguage();
         }
         String systemLang = Locale.getDefault().getLanguage();
-        if (systemLang.equals("he") || systemLang.equals("iw")) return "iw";
+        if (systemLang.equals("he") || systemLang.equals("iw")) return "he";
         return "en";
     }
 }

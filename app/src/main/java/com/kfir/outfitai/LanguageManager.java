@@ -48,8 +48,8 @@ public class LanguageManager {
         }
 
         String lang = systemLocale.getLanguage();
-        if (lang.equals("iw") || lang.equals("he")) {
-            return "iw";
+        if (lang.equals("he") || lang.equals("iw")) {
+            return "he";
         }
         return "en";
     }
