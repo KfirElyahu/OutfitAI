@@ -1,0 +1,148 @@
+<resources>
+    <string name="app_name">OutfitAI</string>
+
+    <string name="common_back">חזרה</string>
+    <string name="common_ok">אישור</string>
+    <string name="common_error">שגיאה</string>
+    <string name="common_success">הצלחה</string>
+    <string name="common_notice">הודעה</string>
+    <string name="common_selection">בחירה</string>
+    <string name="common_gallery">גלריה</string>
+    <string name="common_camera">מצלמה</string>
+    <string name="common_loading">טוען...</string>
+    <string name="common_cancel">ביטול</string>
+
+    <string name="desc_go_back">חזרה אחורה</string>
+    <string name="desc_save_image">שמירת תמונה</string>
+
+    <string name="welcome_to">ברוכים הבאים אל</string>
+    <string name="welcome_sign_in">התחברות</string>
+    <string name="welcome_sign_up">הרשמה</string>
+    <string name="welcome_skip">דלג</string>
+
+    <string name="signin_title_username_email">שם משתמש או אימייל</string>
+    <string name="signin_hint_username_email">הקלד/י שם משתמש או אימייל</string>
+    <string name="signin_title_password">סיסמה</string>
+    <string name="signin_hint_password">הקלד/י סיסמה</string>
+    <string name="signin_btn_signin">התחברות</string>
+    <string name="signin_btn_forgot_password">שכחתי את הסיסמה</string>
+    <string name="signin_error_empty">אי אפשר להשאיר את השדה ריק</string>
+    <string name="signin_error_enter_email_reset">הקלד/י אימייל כדי לאפס את הסיסמה</string>
+    <string name="signin_msg_reset_link_sent">קישור לאיפוס נשלח.</string>
+    <string name="signin_msg_reset_email_associated">קישור לאיפוס נשלח לאימייל המשויך לחשבון.</string>
+    <string name="signin_error_reset_failed">שליחת מייל האיפוס נכשלה.</string>
+    <string name="signin_error_account_not_found">לא נמצא חשבון.</string>
+    <string name="signin_error_offline_failed">התחברות לא מקוונת נכשלה</string>
+    <string name="signin_error_offline_msg">שם משתמש/סיסמה שגויים או שהחשבון לא שמור במכשיר הזה.</string>
+    <string name="signin_error_login_failed">התחברות נכשלה</string>
+    <string name="signin_error_username_not_found">שם המשתמש לא נמצא.</string>
+    <string name="signin_error_connection_failed">החיבור נכשל.</string>
+    <string name="signin_error_verification_required">נדרש אימות</string>
+    <string name="signin_msg_verification_required">האימייל לא אומת. בדוק/י את תיבת הדואר הנכנס.</string>
+    <string name="signin_error_auth_failed">האימות נכשל.</string>
+    <string name="signin_success_msg">התחברת בהצלחה!</string>
+    <string name="signin_error_no_internet_title">אין חיבור לאינטרנט</string>
+    <string name="signin_error_no_internet_reset">כדי לאפס סיסמה צריך חיבור לאינטרנט.</string>
+
+    <string name="signup_title_username">שם משתמש</string>
+    <string name="signup_hint_username">הקלד/י שם משתמש</string>
+    <string name="signup_title_email">אימייל</string>
+    <string name="signup_hint_email">הקלד/י אימייל</string>
+    <string name="signup_title_password">סיסמה</string>
+    <string name="signup_hint_password">הקלד/י סיסמה</string>
+    <string name="signup_title_confirm_pass">אישור סיסמה</string>
+    <string name="signup_hint_confirm_pass">הקלד/י שוב את הסיסמה</string>
+    <string name="signup_btn_signup">הרשמה</string>
+    <string name="signup_error_no_internet_msg">צריך חיבור לאינטרנט כדי להירשם.</string>
+    <string name="signup_error_invalid_email">הקלד/י כתובת אימייל תקינה</string>
+    <string name="signup_error_password_length">הסיסמה חייבת להיות באורך של לפחות 6 תווים</string>
+    <string name="signup_error_password_match">הסיסמאות לא זהות</string>
+    <string name="signup_error_username_taken">שם המשתמש כבר תפוס</string>
+    <string name="signup_error_check_username">לא ניתן היה לבדוק אם שם המשתמש פנוי.</string>
+    <string name="signup_error_profile_setup">החשבון נוצר אבל הגדרת הפרופיל נכשלה.</string>
+    <string name="signup_error_email_registered">האימייל כבר רשום</string>
+    <string name="signup_error_failed">הרשמה נכשלה</string>
+    <string name="signup_success_created">החשבון נוצר</string>
+    <string name="signup_msg_verification_sent">נשלח אימייל אימות ל-%1$s. יש לאמת אותו לפני ההתחברות.</string>
+
+    <string name="generate_btn_generate">צור לוק</string>
+    <string name="generate_dialog_title_source">בחר/י מקור תמונה</string>
+    <string name="generate_msg_no_image">לא נבחרה תמונה</string>
+    <string name="generate_error_camera_title">שגיאת מצלמה</string>
+    <string name="generate_error_camera_capture">צילום התמונה נכשל.</string>
+    <string name="generate_error_camera_missing">לא נמצאה אפליקציית מצלמה במכשיר.</string>
+    <string name="generate_error_missing_images_title">חסרות תמונות</string>
+    <string name="generate_error_missing_images_msg">בחר/י גם תמונה של אדם וגם תמונה של בגד לפני יצירת הלוק.</string>
+    <string name="generate_error_failed_title">יצירה נכשלה</string>
+    <string name="generate_error_failed_msg">ה-AI לא הצליח ליצור את הלוק. נסה/י תמונות אחרות.</string>
+    <string name="generate_error_failed_msg_plural">ה-AI לא הצליח ליצור את הלוקים. נסה/י תמונות אחרות.</string>
+    <string name="generate_error_unexpected">אירעה שגיאה בלתי צפויה: %1$s</string>
+    <string name="generate_error_storage_title">שגיאת אחסון</string>
+    <string name="generate_error_cache_failed">שמירת התמונה שנוצרה במטמון נכשלה.</string>
+    <string name="generate_error_decode_failed">לא ניתן היה לפענח את התמונה שנוצרה.</string>
+    <string name="generate_error_temp_file">לא ניתן ליצור קובץ תמונה זמני.</string>
+    <string name="generate_permission_camera">נדרשת הרשאה</string>
+    <string name="generate_permission_camera_msg">כדי לצלם נדרשת הרשאת מצלמה.</string>
+    <string name="generate_permission_storage_msg">כדי לשמור תמונות נדרשת הרשאת אחסון.</string>
+
+    <string name="prompt_try_all">נסה/י את כל הפרומפטים</string>
+    <string name="prompt_item_name">פרומפט %1$d</string>
+    <string name="prompt_msg_selected_all">נבחר: נסה/י את כל הפרומפטים</string>
+    <string name="prompt_msg_selected_one">נבחר: פרומפט %1$d</string>
+
+    <string name="loading_title_creating">יוצרים לך לוק...</string>
+    <string name="loading_stage_uploading">מעלים את התמונות...</string>
+    <string name="loading_stage_preparing">מכינים את התמונות...</string>
+    <string name="loading_stage_designing">מעצבים לך את הלוק...</string>
+    <string name="loading_stage_working">עדיין עובדים על זה...</string>
+    <string name="loading_stage_designing_variation">מעצבים וריאציה %1$d...</string>
+    <string name="loading_stage_ai_designing">ה-AI מעצב את הלוק...</string>
+    <string name="loading_default_percent">0%</string>
+    <string name="loading_default_timer">00:00</string>
+
+    <string name="history_title">היסטוריה</string>
+    <string name="history_empty">אין עדיין היסטוריה</string>
+    <string name="history_label_ingredients">מרכיבים</string>
+    <string name="history_label_creation">יצירה</string>
+
+    <string name="settings_title">הגדרות</string>
+    <string name="settings_section_username">שם משתמש</string>
+    <string name="settings_hint_username">שם משתמש</string>
+    <string name="settings_section_email">אימייל</string>
+    <string name="settings_hint_email">אימייל</string>
+    <string name="settings_section_new_password">סיסמה חדשה</string>
+    <string name="settings_hint_new_password">השאר/י ריק כדי לשמור על הסיסמה הנוכחית</string>
+    <string name="settings_section_confirm_password">אישור סיסמה</string>
+    <string name="settings_hint_confirm_password">הקלד/י שוב את הסיסמה החדשה</string>
+    <string name="settings_btn_save">שמור שינויים</string>
+    <string name="settings_btn_logout">יציאה מהחשבון</string>
+    <string name="settings_btn_quit">יציאה מהאפליקציה</string>
+    <string name="settings_msg_change_pic">הקש/י כדי לשנות תמונת פרופיל</string>
+    <string name="settings_dialog_pic_title">שינוי תמונת פרופיל</string>
+
+    <string name="settings_error_guest_title">מצב אורח</string>
+    <string name="settings_error_guest_msg">חשבונות אורח לא יכולים לשנות הגדרות.</string>
+    <string name="settings_error_offline_title">לא מקוון</string>
+    <string name="settings_error_offline_msg">צריך חיבור לאינטרנט כדי לעדכן הגדרות.</string>
+    <string name="settings_error_username_empty">שם המשתמש לא יכול להיות ריק</string>
+    <string name="settings_error_email_invalid">אימייל לא תקין</string>
+    <string name="settings_error_pass_short">לפחות 8 תווים</string>
+    <string name="settings_error_pass_mismatch">הסיסמאות לא זהות</string>
+    <string name="settings_error_username_taken">שם המשתמש כבר תפוס</string>
+    <string name="settings_error_auth_expired">פג תוקף ההתחברות. התחבר/י מחדש.</string>
+    <string name="settings_msg_email_verify">נשלח אימייל לאישור עדכון הכתובת. אשר/י דרך תיבת הדואר הנכנס.</string>
+    <string name="settings_msg_update_success">הפרופיל עודכן בהצלחה!</string>
+    <string name="settings_error_update_failed">עדכון הפרופיל בענן נכשל</string>
+    <string name="settings_error_no_camera">לא נמצאה מצלמה.</string>
+    <string name="settings_error_no_camera_app">לא נמצאה אפליקציית מצלמה.</string>
+    <string name="settings_error_create_dir">יצירת התיקייה נכשלה</string>
+
+    <string name="save_error_no_image">אין תמונה לשמירה.</string>
+    <string name="save_success_gallery">התמונה נשמרה בהצלחה בגלריה!</string>
+    <string name="save_error_gallery_failed">לא ניתן לשמור את התמונה בגלריה.</string>
+    <string name="save_error_failed_title">הפעולה נכשלה</string>
+
+    <string name="dialog_placeholder_title">כותרת</string>
+    <string name="dialog_placeholder_message">כאן תופיע ההודעה...</string>
+
+</resources>

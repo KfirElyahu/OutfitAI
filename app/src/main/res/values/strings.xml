@@ -1,3 +1,148 @@
 <resources>
     <string name="app_name">OutfitAI</string>
+
+    <string name="common_back">Back</string>
+    <string name="common_ok">OK</string>
+    <string name="common_error">Error</string>
+    <string name="common_success">Success</string>
+    <string name="common_notice">Notice</string>
+    <string name="common_selection">Selection</string>
+    <string name="common_gallery">Gallery</string>
+    <string name="common_camera">Camera</string>
+    <string name="common_loading">Loading</string>
+    <string name="common_cancel">Cancel</string>
+
+    <string name="desc_go_back">Go Back</string>
+    <string name="desc_save_image">Save Image</string>
+
+    <string name="welcome_to">Welcome To</string>
+    <string name="welcome_sign_in">Sign In</string>
+    <string name="welcome_sign_up">Sign Up</string>
+    <string name="welcome_skip">Skip</string>
+
+    <string name="signin_title_username_email">Username Or Email</string>
+    <string name="signin_hint_username_email">Enter your username or email</string>
+    <string name="signin_title_password">Password</string>
+    <string name="signin_hint_password">Enter your password</string>
+    <string name="signin_btn_signin">Sign In</string>
+    <string name="signin_btn_forgot_password">I forgot my password</string>
+    <string name="signin_error_empty">Field can\'t be empty</string>
+    <string name="signin_error_enter_email_reset">Enter email to reset password</string>
+    <string name="signin_msg_reset_link_sent">Reset link sent.</string>
+    <string name="signin_msg_reset_email_associated">Reset link sent to associated email.</string>
+    <string name="signin_error_reset_failed">Failed to send reset email.</string>
+    <string name="signin_error_account_not_found">Could not find account.</string>
+    <string name="signin_error_offline_failed">Offline Login Failed</string>
+    <string name="signin_error_offline_msg">Invalid credentials or account not saved on this device.</string>
+    <string name="signin_error_login_failed">Login Failed</string>
+    <string name="signin_error_username_not_found">Username not found.</string>
+    <string name="signin_error_connection_failed">Connection failed.</string>
+    <string name="signin_error_verification_required">Verification Required</string>
+    <string name="signin_msg_verification_required">Email not verified. Please check your inbox.</string>
+    <string name="signin_error_auth_failed">Authentication failed.</string>
+    <string name="signin_success_msg">Sign in successful!</string>
+    <string name="signin_error_no_internet_title">No Internet</string>
+    <string name="signin_error_no_internet_reset">Connect to internet to reset password.</string>
+
+    <string name="signup_title_username">Username</string>
+    <string name="signup_hint_username">Enter your username</string>
+    <string name="signup_title_email">Email</string>
+    <string name="signup_hint_email">Enter your email</string>
+    <string name="signup_title_password">Password</string>
+    <string name="signup_hint_password">Enter your password</string>
+    <string name="signup_title_confirm_pass">Confirm Password</string>
+    <string name="signup_hint_confirm_pass">Confirm your password</string>
+    <string name="signup_btn_signup">Sign Up</string>
+    <string name="signup_error_no_internet_msg">You must be online to sign up.</string>
+    <string name="signup_error_invalid_email">Please enter a valid email address</string>
+    <string name="signup_error_password_length">Password must be at least 6 characters long</string>
+    <string name="signup_error_password_match">Passwords do not match</string>
+    <string name="signup_error_username_taken">Username is already taken</string>
+    <string name="signup_error_check_username">Could not check username availability.</string>
+    <string name="signup_error_profile_setup">Account created but profile setup failed.</string>
+    <string name="signup_error_email_registered">Email already registered</string>
+    <string name="signup_error_failed">Sign Up Failed</string>
+    <string name="signup_success_created">Account Created</string>
+    <string name="signup_msg_verification_sent">Verification email sent to %1$s. Please verify before logging in.</string>
+
+    <string name="generate_btn_generate">Generate</string>
+    <string name="generate_dialog_title_source">Choose Image Source</string>
+    <string name="generate_msg_no_image">No image selected</string>
+    <string name="generate_error_camera_title">Camera Error</string>
+    <string name="generate_error_camera_capture">Failed to capture image.</string>
+    <string name="generate_error_camera_missing">No camera app found on this device.</string>
+    <string name="generate_error_missing_images_title">Missing Images</string>
+    <string name="generate_error_missing_images_msg">Please select both a person and clothing image before generating.</string>
+    <string name="generate_error_failed_title">Generation Failed</string>
+    <string name="generate_error_failed_msg">The AI could not generate the outfit. Please try different images.</string>
+    <string name="generate_error_failed_msg_plural">The AI could not generate the outfits. Please try different images.</string>
+    <string name="generate_error_unexpected">An unexpected error occurred: %1$s</string>
+    <string name="generate_error_storage_title">Storage Error</string>
+    <string name="generate_error_cache_failed">Failed to cache generated image.</string>
+    <string name="generate_error_decode_failed">Failed to decode the generated image.</string>
+    <string name="generate_error_temp_file">Could not create temporary image file.</string>
+    <string name="generate_permission_camera">Permission Required</string>
+    <string name="generate_permission_camera_msg">Camera permission is required to take photos.</string>
+    <string name="generate_permission_storage_msg">Storage permission is required to save images.</string>
+
+    <string name="prompt_try_all">Try All Prompts</string>
+    <string name="prompt_item_name">Prompt %1$d</string>
+    <string name="prompt_msg_selected_all">Selected: Try All Prompts</string>
+    <string name="prompt_msg_selected_one">Selected: Prompt %1$d</string>
+
+    <string name="loading_title_creating">Creating your Outfit...</string>
+    <string name="loading_stage_uploading">Uploading images...</string>
+    <string name="loading_stage_preparing">Preparing images...</string>
+    <string name="loading_stage_designing">We are designing your outfit...</string>
+    <string name="loading_stage_working">Still working on it..</string>
+    <string name="loading_stage_designing_variation">Designing Variation %1$d...</string>
+    <string name="loading_stage_ai_designing">AI is designing outfit...</string>
+    <string name="loading_default_percent">0%</string>
+    <string name="loading_default_timer">00:00</string>
+
+    <string name="history_title">History</string>
+    <string name="history_empty">No history yet</string>
+    <string name="history_label_ingredients">Ingredients</string>
+    <string name="history_label_creation">Creation</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_username">Username</string>
+    <string name="settings_hint_username">Username</string>
+    <string name="settings_section_email">Email</string>
+    <string name="settings_hint_email">Email</string>
+    <string name="settings_section_new_password">New Password</string>
+    <string name="settings_hint_new_password">Leave empty to keep current</string>
+    <string name="settings_section_confirm_password">Confirm Password</string>
+    <string name="settings_hint_confirm_password">Retype new password</string>
+    <string name="settings_btn_save">Save Changes</string>
+    <string name="settings_btn_logout">Log Out</string>
+    <string name="settings_btn_quit">Quit Application</string>
+    <string name="settings_msg_change_pic">Tap to change profile picture</string>
+    <string name="settings_dialog_pic_title">Change Profile Picture</string>
+
+    <string name="settings_error_guest_title">Guest Mode</string>
+    <string name="settings_error_guest_msg">Guest accounts cannot change settings.</string>
+    <string name="settings_error_offline_title">Offline</string>
+    <string name="settings_error_offline_msg">You must be online to update settings.</string>
+    <string name="settings_error_username_empty">Username cannot be empty</string>
+    <string name="settings_error_email_invalid">Invalid Email</string>
+    <string name="settings_error_pass_short">Minimum 8 characters</string>
+    <string name="settings_error_pass_mismatch">Passwords do not match</string>
+    <string name="settings_error_username_taken">Username already taken</string>
+    <string name="settings_error_auth_expired">Authentication session expired. Please login again.</string>
+    <string name="settings_msg_email_verify">Email update verification sent. Please confirm in your inbox.</string>
+    <string name="settings_msg_update_success">Profile Updated Successfully!</string>
+    <string name="settings_error_update_failed">Failed to update cloud profile</string>
+    <string name="settings_error_no_camera">No camera found.</string>
+    <string name="settings_error_no_camera_app">No camera app found.</string>
+    <string name="settings_error_create_dir">Failed to create directory</string>
+
+    <string name="save_error_no_image">No image to save.</string>
+    <string name="save_success_gallery">Image saved to Gallery successfully!</string>
+    <string name="save_error_gallery_failed">Could not save image to gallery.</string>
+    <string name="save_error_failed_title">Failed</string>
+
+    <string name="dialog_placeholder_title">Title</string>
+    <string name="dialog_placeholder_message">Message goes here...</string>
+
 </resources>
