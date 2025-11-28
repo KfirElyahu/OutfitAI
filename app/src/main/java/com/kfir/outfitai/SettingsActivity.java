@@ -12,6 +12,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -32,17 +33,24 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
+import com.bumptech.glide.signature.ObjectKey;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SettingsActivity extends AppCompatActivity {
 
+    private static final String TAG = "SettingsActivity";
     private HelperUserDB dbHelper;
     private SessionManager sessionManager;
     private FirebaseAuth mAuth;
@@ -56,6 +64,8 @@ public class SettingsActivity extends AppCompatActivity {
     private Uri tempImageUri;
     private Uri selectedProfileUri;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 2001;
+
+    private static final String COLLECTION_PROFILE_PICS = "profile_images";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,6 +123,7 @@ public class SettingsActivity extends AppCompatActivity {
             loadUserData();
             setupImagePickers();
             setupKeyboardHandling();
+            syncProfilePicture();
         }
     }
 
@@ -123,9 +134,47 @@ public class SettingsActivity extends AppCompatActivity {
             editEmail.setText(user.getEmail());
             editPassword.setText("");
             editConfirmPassword.setText("");
-            if (user.getProfilePicUri() != null && !user.getProfilePicUri().isEmpty()) {
-                selectedProfileUri = Uri.parse(user.getProfilePicUri());
-                displayProfileImage(selectedProfileUri);
+            loadProfileImageFromLocal();
+        }
+    }
+
+    private void loadProfileImageFromLocal() {
+        File localFile = ImageUtils.getLocalProfileFile(this, currentEmail);
+        if (localFile.exists()) {
+            profileImageView.setImageTintList(null);
+            Glide.with(this)
+                    .load(localFile)
+                    .signature(new ObjectKey(localFile.lastModified()))
+                    .transform(new CircleCrop())
+                    .into(profileImageView);
+        } else {
+            profileImageView.setImageResource(R.drawable.person_icon);
+        }
+    }
+
+    private void syncProfilePicture() {
+        if (!NetworkUtils.isNetworkAvailable(this)) return;
+
+        File localFile = ImageUtils.getLocalProfileFile(this, currentEmail);
+
+        if (!localFile.exists()) {
+            FirebaseUser fbUser = mAuth.getCurrentUser();
+            if (fbUser != null) {
+                db.collection(COLLECTION_PROFILE_PICS).document(fbUser.getUid())
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
+                            if (documentSnapshot.exists()) {
+                                String base64 = documentSnapshot.getString("base64");
+                                if (base64 != null && !base64.isEmpty()) {
+                                    try {
+                                        ImageUtils.saveBase64ToLocal(SettingsActivity.this, base64, currentEmail);
+                                        loadProfileImageFromLocal();
+                                    } catch (IOException e) {
+                                        Log.e(TAG, "Failed to save downloaded image", e);
+                                    }
+                                }
+                            }
+                        });
             }
         }
     }
@@ -155,6 +204,8 @@ public class SettingsActivity extends AppCompatActivity {
             finalPassword = newPassword;
         }
 
+        findViewById(R.id.save_changes_button).setEnabled(false);
+
         boolean usernameChanged = !newUsername.equals(currentUser.getUsername());
 
         if (usernameChanged) {
@@ -163,6 +214,7 @@ public class SettingsActivity extends AppCompatActivity {
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful() && !task.getResult().isEmpty()) {
                             editUsername.setError(getString(R.string.settings_error_username_taken));
+                            findViewById(R.id.save_changes_button).setEnabled(true);
                         } else {
                             proceedWithUpdates(newUsername, newEmail, finalP, currentUser);
                         }
@@ -176,6 +228,7 @@ public class SettingsActivity extends AppCompatActivity {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
         if (firebaseUser == null) {
             DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_auth_expired));
+            findViewById(R.id.save_changes_button).setEnabled(true);
             return;
         }
 
@@ -188,14 +241,30 @@ public class SettingsActivity extends AppCompatActivity {
             firebaseUser.updatePassword(newPassword);
         }
 
-        db.collection("users").document(firebaseUser.getUid())
-                .update("username", newUsername, "email", newEmail)
+        List<Task<Void>> tasks = new ArrayList<>();
+
+        Task<Void> updateUserTask = db.collection("users").document(firebaseUser.getUid())
+                .update("username", newUsername, "email", newEmail);
+        tasks.add(updateUserTask);
+
+        if (selectedProfileUri != null) {
+            Task<Void> imageUploadTask = prepareImageUploadTask(firebaseUser.getUid(), newEmail);
+            if (imageUploadTask != null) {
+                tasks.add(imageUploadTask);
+            } else {
+                Toast.makeText(this, "Failed to process image for upload", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        Tasks.whenAll(tasks)
                 .addOnSuccessListener(aVoid -> {
                     User updatedUser = new User();
                     updatedUser.setUsername(newUsername);
                     updatedUser.setEmail(newEmail);
                     updatedUser.setPassword(newPassword);
-                    updatedUser.setProfilePicUri(selectedProfileUri != null ? selectedProfileUri.toString() : currentUser.getProfilePicUri());
+
+                    File localFile = ImageUtils.getLocalProfileFile(this, newEmail);
+                    updatedUser.setProfilePicUri(Uri.fromFile(localFile).toString());
 
                     if (dbHelper.updateUserProfile(currentEmail, updatedUser)) {
                         DialogUtils.showDialog(this, getString(R.string.common_success), getString(R.string.settings_msg_update_success), () -> {
@@ -204,11 +273,34 @@ public class SettingsActivity extends AppCompatActivity {
                                 sessionManager.createLoginSession(newEmail);
                                 currentEmail = newEmail;
                             }
+                            selectedProfileUri = null;
                             loadUserData();
+                            findViewById(R.id.save_changes_button).setEnabled(true);
                         });
                     }
                 })
-                .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, getString(R.string.settings_error_update_failed), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Update failed", e);
+                    Toast.makeText(SettingsActivity.this, getString(R.string.settings_error_update_failed) + ": " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    findViewById(R.id.save_changes_button).setEnabled(true);
+                });
+    }
+
+    private Task<Void> prepareImageUploadTask(String uid, String emailForFilename) {
+        try {
+            String base64Image = ImageUtils.processAndSaveImage(this, selectedProfileUri, emailForFilename);
+
+            if (base64Image != null) {
+                Map<String, Object> picData = new HashMap<>();
+                picData.put("base64", base64Image);
+                picData.put("updated", System.currentTimeMillis());
+
+                return db.collection(COLLECTION_PROFILE_PICS).document(uid).set(picData);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Image processing failed", e);
+        }
+        return null;
     }
 
     private void setupPasswordToggle(EditText editText, ImageButton button) {
@@ -226,23 +318,20 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
-    private void displayProfileImage(Uri uri) {
-        profileImageView.setImageTintList(null);
-        Glide.with(this).load(uri).transform(new CircleCrop()).into(profileImageView);
-    }
-
     private void setupImagePickers() {
         pickMediaLauncher = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
             if (uri != null) {
-                selectedProfileUri = saveUriToInternalStorage(uri);
-                displayProfileImage(selectedProfileUri);
+                selectedProfileUri = uri;
+                profileImageView.setImageTintList(null);
+                Glide.with(this).load(uri).transform(new CircleCrop()).into(profileImageView);
             }
         });
 
         takePictureLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
             if (success) {
-                selectedProfileUri = saveUriToInternalStorage(tempImageUri);
-                displayProfileImage(selectedProfileUri);
+                selectedProfileUri = tempImageUri;
+                profileImageView.setImageTintList(null);
+                Glide.with(this).load(tempImageUri).transform(new CircleCrop()).into(profileImageView);
             }
         });
     }
@@ -297,21 +386,6 @@ public class SettingsActivity extends AppCompatActivity {
             values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "OutfitAI");
         }
         return getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-    }
-
-    private Uri saveUriToInternalStorage(Uri sourceUri) {
-        try {
-            InputStream inputStream = getContentResolver().openInputStream(sourceUri);
-            File profileDir = new File(getFilesDir(), "profile_images");
-            if (!profileDir.exists()) profileDir.mkdirs();
-            File destFile = new File(profileDir, "profile_" + System.currentTimeMillis() + ".jpg");
-            FileOutputStream fos = new FileOutputStream(destFile);
-            byte[] buffer = new byte[4096];
-            int length;
-            while ((length = inputStream.read(buffer)) > 0) { fos.write(buffer, 0, length); }
-            fos.close(); inputStream.close();
-            return Uri.fromFile(destFile);
-        } catch (Exception e) { e.printStackTrace(); return sourceUri; }
     }
 
     private void setupKeyboardHandling() {
