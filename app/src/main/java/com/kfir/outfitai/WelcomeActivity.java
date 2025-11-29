@@ -1,14 +1,19 @@
 package com.kfir.outfitai;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.drawable.Animatable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
@@ -17,7 +22,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.graphics.drawable.Animatable;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,10 +34,15 @@ public class WelcomeActivity extends AppCompatActivity {
 
     private LanguageManager languageManager;
     private ObjectAnimator glowAnimator;
+    private Vibrator vibrator;
+    private boolean beat1Triggered = false;
+    private boolean beat2Triggered = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         languageManager = new LanguageManager(this);
 
@@ -82,7 +91,42 @@ public class WelcomeActivity extends AppCompatActivity {
         glowAnimator.setRepeatCount(ObjectAnimator.INFINITE);
         glowAnimator.setRepeatMode(ObjectAnimator.RESTART);
         glowAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+
+        glowAnimator.addUpdateListener(animation -> {
+            float fraction = animation.getAnimatedFraction();
+
+            if (fraction >= 0.38f && fraction <= 0.45f && !beat1Triggered) {
+                triggerWeakVibration();
+                beat1Triggered = true;
+            }
+
+            if (fraction >= 0.60f && fraction <= 0.67f && !beat2Triggered) {
+                triggerStrongVibration();
+                beat2Triggered = true;
+            }
+        });
+
+        glowAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+                beat1Triggered = false;
+                beat2Triggered = false;
+            }
+        });
+
         glowAnimator.start();
+    }
+
+    private void triggerWeakVibration() {
+        if (vibrator != null) {
+            vibrator.vibrate(VibrationEffect.createOneShot(30, 50));
+        }
+    }
+
+    private void triggerStrongVibration() {
+        if (vibrator != null) {
+            vibrator.vibrate(VibrationEffect.createOneShot(50, 100));
+        }
     }
 
     @Override
@@ -126,6 +170,7 @@ public class WelcomeActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (glowAnimator != null) {
+            glowAnimator.removeAllUpdateListeners();
             glowAnimator.cancel();
             glowAnimator = null;
         }
@@ -201,8 +246,6 @@ public class WelcomeActivity extends AppCompatActivity {
         Button confirmButton = view.findViewById(R.id.btn_confirm_lang);
 
         String currentCode = languageManager.getCurrentLanguageCode();
-        android.util.Log.d("LANG_DEBUG", "Dialog Opened. Manager says: " + currentCode);
-        android.util.Log.d("LANG_DEBUG", "System Locale: " + Locale.getDefault().toString());
 
         if (currentCode.equals("iw") || currentCode.equals("he")) {
             radioHebrew.setChecked(true);
@@ -221,7 +264,6 @@ public class WelcomeActivity extends AppCompatActivity {
 
         confirmButton.setOnClickListener(v -> {
             String selectedLang = radioHebrew.isChecked() ? "he" : "en";
-            android.util.Log.d("LANG_DEBUG", "User selected: " + selectedLang);
 
             languageManager.setFirstRunCompleted();
 
@@ -231,13 +273,8 @@ public class WelcomeActivity extends AppCompatActivity {
             Configuration config = new Configuration(getResources().getConfiguration());
             config.setLocale(new Locale(selectedLang));
             Context tempContext = createConfigurationContext(config);
-            String testString = tempContext.getString(R.string.welcome_sign_in);
-
-            android.util.Log.d("LANG_DEBUG", "Testing Resource Lookup for: " + selectedLang);
-            android.util.Log.d("LANG_DEBUG", "Resulting String: " + testString);
 
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                android.util.Log.d("LANG_DEBUG", "Recreating Activity...");
                 recreate();
             }, 100);
         });
