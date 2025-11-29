@@ -1,0 +1,15 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_logo">
+
+    <target
+        android:name="shirtLeft"
+        android:animation="@animator/logo_draw_shirt" />
+
+    <target
+        android:name="shirtRight"
+        android:animation="@animator/logo_draw_shirt" />
+
+    <target
+        android:name="starPath"
+        android:animation="@animator/logo_draw_star" />
+</animated-vector>

@@ -1,0 +1,24 @@
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="4500"
+    android:repeatCount="infinite"
+    android:repeatMode="restart">
+    <propertyValuesHolder android:propertyName="trimPathEnd">
+        <keyframe
+            android:fraction="0"
+            android:value="0" />
+        <keyframe
+            android:fraction="0.4"
+            android:interpolator="@android:interpolator/fast_out_slow_in"
+            android:value="1" />
+        <keyframe
+            android:fraction="0.65"
+            android:value="1" />
+        <keyframe
+            android:fraction="0.95"
+            android:interpolator="@android:interpolator/fast_out_slow_in"
+            android:value="0" />
+        <keyframe
+            android:fraction="1"
+            android:value="0" />
+    </propertyValuesHolder>
+</objectAnimator>
