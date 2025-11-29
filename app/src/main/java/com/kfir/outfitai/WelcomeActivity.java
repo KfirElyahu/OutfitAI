@@ -57,14 +57,25 @@ public class WelcomeActivity extends AppCompatActivity {
             proceedToAppFlow();
         }
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         startLogoAnimation();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopLogoAnimation();
     }
 
     private void startLogoAnimation() {
         ImageView logoImageView = findViewById(R.id.logoImageView);
         if (logoImageView != null) {
             Drawable d = logoImageView.getDrawable();
-            if (d instanceof Animatable) {
+            if (d instanceof Animatable && !((Animatable) d).isRunning()) {
                 ((Animatable) d).start();
             }
         }
@@ -75,7 +86,30 @@ public class WelcomeActivity extends AppCompatActivity {
         }
     }
 
+    private void stopLogoAnimation() {
+        ImageView logoImageView = findViewById(R.id.logoImageView);
+        if (logoImageView != null) {
+            Drawable d = logoImageView.getDrawable();
+            if (d instanceof Animatable && ((Animatable) d).isRunning()) {
+                ((Animatable) d).stop();
+            }
+        }
+
+        if (glowAnimator != null) {
+            glowAnimator.removeAllUpdateListeners();
+            glowAnimator.cancel();
+            glowAnimator = null;
+        }
+    }
+
     private void startGlowAnimation(ImageView glowView) {
+        if (glowAnimator != null) {
+            glowAnimator.cancel();
+        }
+
+        beat1Triggered = false;
+        beat2Triggered = false;
+
         PropertyValuesHolder alphaHolder = PropertyValuesHolder.ofFloat(View.ALPHA,
                 0f, 0.6f, 0.8f, 0.5f, 0.9f, 0.6f, 0f);
 
@@ -130,50 +164,9 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        if (glowAnimator != null && glowAnimator.isRunning()) {
-            glowAnimator.pause();
-        }
-
-        ImageView logoImageView = findViewById(R.id.logoImageView);
-        if (logoImageView != null) {
-            Drawable d = logoImageView.getDrawable();
-            if (d instanceof Animatable && ((Animatable) d).isRunning()) {
-                ((Animatable) d).stop();
-            }
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (glowAnimator != null && glowAnimator.isPaused()) {
-            glowAnimator.resume();
-        } else if (glowAnimator == null) {
-            ImageView glowView = findViewById(R.id.logoGlow);
-            if (glowView != null) {
-                startGlowAnimation(glowView);
-            }
-        }
-
-        ImageView logoImageView = findViewById(R.id.logoImageView);
-        if (logoImageView != null) {
-            Drawable d = logoImageView.getDrawable();
-            if (d instanceof Animatable && !((Animatable) d).isRunning()) {
-                ((Animatable) d).start();
-            }
-        }
-    }
-
-    @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (glowAnimator != null) {
-            glowAnimator.removeAllUpdateListeners();
-            glowAnimator.cancel();
-            glowAnimator = null;
-        }
+        stopLogoAnimation();
     }
 
     private void proceedToAppFlow() {
