@@ -49,18 +49,33 @@
         app:layout_constraintStart_toEndOf="@+id/OutfitAI_text"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <ImageView
-        android:id="@+id/logoImageView"
+    <FrameLayout
+        android:id="@+id/logoContainer"
         android:layout_width="280dp"
         android:layout_height="280dp"
-        android:layout_gravity="center"
         android:layout_marginBottom="50dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_logo_animated"
         app:layout_constraintBottom_toTopOf="@+id/SignIn_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/OutfitAI_text" />
+        app:layout_constraintTop_toBottomOf="@+id/OutfitAI_text">
+
+        <ImageView
+            android:id="@+id/logoGlow"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:alpha="0"
+            android:src="@drawable/logo_glow" />
+
+        <ImageView
+            android:id="@+id/logoImageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_logo_animated" />
+
+    </FrameLayout>
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/SignIn_button"

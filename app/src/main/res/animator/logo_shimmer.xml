@@ -1,0 +1,14 @@
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="5000"
+    android:repeatCount="infinite"
+    android:repeatMode="restart">
+    <propertyValuesHolder android:propertyName="trimPathOffset">
+        <keyframe android:fraction="0" android:value="0" />
+        <keyframe android:fraction="0.35" android:value="0" />
+        <keyframe android:fraction="0.55" android:value="0.5"
+            android:interpolator="@android:interpolator/linear" />
+        <keyframe android:fraction="0.70" android:value="0"
+            android:interpolator="@android:interpolator/linear" />
+        <keyframe android:fraction="1" android:value="0" />
+    </propertyValuesHolder>
+</objectAnimator>

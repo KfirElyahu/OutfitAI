@@ -6,71 +6,93 @@
     android:viewportHeight="800">
 
     <group
-        android:translateX="238"
-        android:translateY="189.5">
+        android:name="mainGroup"
+        android:pivotX="400"
+        android:pivotY="400"
+        android:scaleX="1"
+        android:scaleY="1">
 
-        <path
-            android:name="starPath"
-            android:pathData="M162,10c11,44.5,21.5,53.5,62.5,62.5-41,9-51.5,18-62.5,62.5-11-44.5-21.5-53.5-62.5-62.5,41-9,51.5-18,62.5-62.5Z"
-            android:strokeWidth="20"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:trimPathStart="0"
-            android:trimPathEnd="0">
-            <aapt:attr name="android:strokeColor">
-                <gradient
-                    android:type="linear"
-                    android:startX="162"
-                    android:startY="0"
-                    android:endX="162"
-                    android:endY="421">
-                    <item android:offset="0" android:color="#6bffd4" />
-                    <item android:offset="1" android:color="#00e676" />
-                </gradient>
-            </aapt:attr>
-        </path>
+        <group
+            android:translateX="238"
+            android:translateY="189.5">
+            <group
+                android:name="starGroup"
+                android:pivotX="162"
+                android:pivotY="72.5"
+                android:rotation="0">
 
-        <path
-            android:name="shirtLeft"
-            android:pathData="M210,149 c-32,33 -64,33 -96,0 H80 L12,216 l31,36 37,-33 v190 h82"
-            android:strokeWidth="24"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:trimPathStart="0"
-            android:trimPathEnd="0">
-            <aapt:attr name="android:strokeColor">
-                <gradient
-                    android:type="linear"
-                    android:startX="162"
-                    android:startY="0"
-                    android:endX="162"
-                    android:endY="421">
-                    <item android:offset="0" android:color="#6bffd4" />
-                    <item android:offset="1" android:color="#00e676" />
-                </gradient>
-            </aapt:attr>
-        </path>
+                <path
+                    android:name="starPath"
+                    android:pathData="M162,10c11,44.5,21.5,53.5,62.5,62.5-41,9-51.5,18-62.5,62.5-11-44.5-21.5-53.5-62.5-62.5,41-9,51.5-18,62.5-62.5Z"
+                    android:strokeWidth="20"
+                    android:strokeAlpha="0"
+                    android:strokeLineCap="round"
+                    android:strokeLineJoin="round"
+                    android:trimPathStart="0"
+                    android:trimPathEnd="0"
+                    android:trimPathOffset="0">
+                    <aapt:attr name="android:strokeColor">
+                        <gradient
+                            android:type="linear"
+                            android:startX="162"
+                            android:startY="0"
+                            android:endX="162"
+                            android:endY="421">
+                            <item android:offset="0" android:color="#6bffd4" />
+                            <item android:offset="1" android:color="#00e676" />
+                        </gradient>
+                    </aapt:attr>
+                </path>
+            </group>
 
-        <path
-            android:name="shirtRight"
-            android:pathData="M210,149 h34 l68,67 -31,36 -37,-33 v190 h-82"
-            android:strokeWidth="24"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:trimPathStart="0"
-            android:trimPathEnd="0">
-            <aapt:attr name="android:strokeColor">
-                <gradient
-                    android:type="linear"
-                    android:startX="162"
-                    android:startY="0"
-                    android:endX="162"
-                    android:endY="421">
-                    <item android:offset="0" android:color="#6bffd4" />
-                    <item android:offset="1" android:color="#00e676" />
-                </gradient>
-            </aapt:attr>
-        </path>
+            <group android:name="shirtGroup">
+                <path
+                    android:name="shirtLeft"
+                    android:pathData="M210,149 c-32,33 -64,33 -96,0 H80 L12,216 l31,36 37,-33 v190 h82"
+                    android:strokeWidth="24"
+                    android:strokeAlpha="0"
+                    android:strokeLineCap="round"
+                    android:strokeLineJoin="round"
+                    android:trimPathStart="0"
+                    android:trimPathEnd="0"
+                    android:trimPathOffset="0">
+                    <aapt:attr name="android:strokeColor">
+                        <gradient
+                            android:type="linear"
+                            android:startX="162"
+                            android:startY="0"
+                            android:endX="162"
+                            android:endY="421">
+                            <item android:offset="0" android:color="#6bffd4" />
+                            <item android:offset="1" android:color="#00e676" />
+                        </gradient>
+                    </aapt:attr>
+                </path>
 
+                <path
+                    android:name="shirtRight"
+                    android:pathData="M210,149 h34 l68,67 -31,36 -37,-33 v190 h-82"
+                    android:strokeWidth="24"
+                    android:strokeAlpha="0"
+                    android:strokeLineCap="round"
+                    android:strokeLineJoin="round"
+                    android:trimPathStart="0"
+                    android:trimPathEnd="0"
+                    android:trimPathOffset="0">
+                    <aapt:attr name="android:strokeColor">
+                        <gradient
+                            android:type="linear"
+                            android:startX="162"
+                            android:startY="0"
+                            android:endX="162"
+                            android:endY="421">
+                            <item android:offset="0" android:color="#6bffd4" />
+                            <item android:offset="1" android:color="#00e676" />
+                        </gradient>
+                    </aapt:attr>
+                </path>
+            </group>
+
+        </group>
     </group>
 </vector>

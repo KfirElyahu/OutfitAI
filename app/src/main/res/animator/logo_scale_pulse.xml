@@ -1,0 +1,35 @@
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="5000"
+    android:repeatCount="infinite"
+    android:repeatMode="restart">
+    <propertyValuesHolder android:propertyName="scaleX">
+        <keyframe android:fraction="0" android:value="0.85" />
+        <keyframe android:fraction="0.12" android:value="1.0"
+            android:interpolator="@android:interpolator/decelerate_cubic" />
+        <keyframe android:fraction="0.35" android:value="1.0" />
+        <keyframe android:fraction="0.42" android:value="1.06"
+            android:interpolator="@android:interpolator/overshoot" />
+        <keyframe android:fraction="0.50" android:value="1.0" />
+        <keyframe android:fraction="0.58" android:value="1.04" />
+        <keyframe android:fraction="0.65" android:value="1.0" />
+        <keyframe android:fraction="0.85" android:value="1.0" />
+        <keyframe android:fraction="0.95" android:value="0.85"
+            android:interpolator="@android:interpolator/accelerate_cubic" />
+        <keyframe android:fraction="1" android:value="0.85" />
+    </propertyValuesHolder>
+    <propertyValuesHolder android:propertyName="scaleY">
+        <keyframe android:fraction="0" android:value="0.85" />
+        <keyframe android:fraction="0.12" android:value="1.0"
+            android:interpolator="@android:interpolator/decelerate_cubic" />
+        <keyframe android:fraction="0.35" android:value="1.0" />
+        <keyframe android:fraction="0.42" android:value="1.06"
+            android:interpolator="@android:interpolator/overshoot" />
+        <keyframe android:fraction="0.50" android:value="1.0" />
+        <keyframe android:fraction="0.58" android:value="1.04" />
+        <keyframe android:fraction="0.65" android:value="1.0" />
+        <keyframe android:fraction="0.85" android:value="1.0" />
+        <keyframe android:fraction="0.95" android:value="0.85"
+            android:interpolator="@android:interpolator/accelerate_cubic" />
+        <keyframe android:fraction="1" android:value="0.85" />
+    </propertyValuesHolder>
+</objectAnimator>

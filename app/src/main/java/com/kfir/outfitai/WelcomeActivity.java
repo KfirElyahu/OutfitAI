@@ -1,5 +1,7 @@
 package com.kfir.outfitai;
 
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -10,6 +12,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RadioButton;
@@ -26,6 +29,7 @@ import java.util.Locale;
 public class WelcomeActivity extends AppCompatActivity {
 
     private LanguageManager languageManager;
+    private ObjectAnimator glowAnimator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,11 +48,86 @@ public class WelcomeActivity extends AppCompatActivity {
             proceedToAppFlow();
         }
 
-        ImageView logoImageView = findViewById(R.id.logoImageView);
-        Drawable d = logoImageView.getDrawable();
+        startLogoAnimation();
+    }
 
-        if (d instanceof Animatable) {
-            ((Animatable) d).start();
+    private void startLogoAnimation() {
+        ImageView logoImageView = findViewById(R.id.logoImageView);
+        if (logoImageView != null) {
+            Drawable d = logoImageView.getDrawable();
+            if (d instanceof Animatable) {
+                ((Animatable) d).start();
+            }
+        }
+
+        ImageView glowView = findViewById(R.id.logoGlow);
+        if (glowView != null) {
+            startGlowAnimation(glowView);
+        }
+    }
+
+    private void startGlowAnimation(ImageView glowView) {
+        PropertyValuesHolder alphaHolder = PropertyValuesHolder.ofFloat(View.ALPHA,
+                0f, 0.6f, 0.8f, 0.5f, 0.9f, 0.6f, 0f);
+
+        PropertyValuesHolder scaleXHolder = PropertyValuesHolder.ofFloat(View.SCALE_X,
+                0.8f, 1.0f, 1.1f, 1.0f, 1.15f, 1.0f, 0.8f);
+
+        PropertyValuesHolder scaleYHolder = PropertyValuesHolder.ofFloat(View.SCALE_Y,
+                0.8f, 1.0f, 1.1f, 1.0f, 1.15f, 1.0f, 0.8f);
+
+        glowAnimator = ObjectAnimator.ofPropertyValuesHolder(glowView,
+                alphaHolder, scaleXHolder, scaleYHolder);
+        glowAnimator.setDuration(5000);
+        glowAnimator.setRepeatCount(ObjectAnimator.INFINITE);
+        glowAnimator.setRepeatMode(ObjectAnimator.RESTART);
+        glowAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+        glowAnimator.start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (glowAnimator != null && glowAnimator.isRunning()) {
+            glowAnimator.pause();
+        }
+
+        ImageView logoImageView = findViewById(R.id.logoImageView);
+        if (logoImageView != null) {
+            Drawable d = logoImageView.getDrawable();
+            if (d instanceof Animatable && ((Animatable) d).isRunning()) {
+                ((Animatable) d).stop();
+            }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (glowAnimator != null && glowAnimator.isPaused()) {
+            glowAnimator.resume();
+        } else if (glowAnimator == null) {
+            ImageView glowView = findViewById(R.id.logoGlow);
+            if (glowView != null) {
+                startGlowAnimation(glowView);
+            }
+        }
+
+        ImageView logoImageView = findViewById(R.id.logoImageView);
+        if (logoImageView != null) {
+            Drawable d = logoImageView.getDrawable();
+            if (d instanceof Animatable && !((Animatable) d).isRunning()) {
+                ((Animatable) d).start();
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (glowAnimator != null) {
+            glowAnimator.cancel();
+            glowAnimator = null;
         }
     }
 
@@ -74,6 +153,8 @@ public class WelcomeActivity extends AppCompatActivity {
         signUpButton.setVisibility(View.VISIBLE);
         skipButton.setVisibility(View.VISIBLE);
 
+        animateButtonsEntrance(signInButton, signUpButton, skipButton);
+
         signInButton.setOnClickListener(v -> {
             Intent intent = new Intent(WelcomeActivity.this, SignInActivity.class);
             startActivity(intent);
@@ -93,6 +174,21 @@ public class WelcomeActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+    }
+
+    private void animateButtonsEntrance(View... buttons) {
+        for (int i = 0; i < buttons.length; i++) {
+            View button = buttons[i];
+            button.setAlpha(0f);
+            button.setTranslationY(50f);
+            button.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setDuration(400)
+                    .setStartDelay(100L * i)
+                    .setInterpolator(new AccelerateDecelerateInterpolator())
+                    .start();
+        }
     }
 
     private void showLanguageDialog() {

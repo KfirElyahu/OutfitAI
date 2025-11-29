@@ -1,0 +1,37 @@
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="5000"
+    android:repeatCount="infinite"
+    android:repeatMode="restart">
+    <propertyValuesHolder android:propertyName="scaleX">
+        <keyframe android:fraction="0" android:value="0.5" />
+        <keyframe android:fraction="0.15" android:value="1.15"
+            android:interpolator="@android:interpolator/overshoot" />
+        <keyframe android:fraction="0.22" android:value="1.0" />
+        <keyframe android:fraction="0.40" android:value="1.0" />
+        <keyframe android:fraction="0.45" android:value="1.2" />
+        <keyframe android:fraction="0.50" android:value="1.0" />
+        <keyframe android:fraction="0.60" android:value="1.0" />
+        <keyframe android:fraction="0.64" android:value="1.15" />
+        <keyframe android:fraction="0.68" android:value="1.0" />
+        <keyframe android:fraction="0.80" android:value="1.0" />
+        <keyframe android:fraction="0.92" android:value="0.5"
+            android:interpolator="@android:interpolator/accelerate_quad" />
+        <keyframe android:fraction="1" android:value="0.5" />
+    </propertyValuesHolder>
+    <propertyValuesHolder android:propertyName="scaleY">
+        <keyframe android:fraction="0" android:value="0.5" />
+        <keyframe android:fraction="0.15" android:value="1.15"
+            android:interpolator="@android:interpolator/overshoot" />
+        <keyframe android:fraction="0.22" android:value="1.0" />
+        <keyframe android:fraction="0.40" android:value="1.0" />
+        <keyframe android:fraction="0.45" android:value="1.2" />
+        <keyframe android:fraction="0.50" android:value="1.0" />
+        <keyframe android:fraction="0.60" android:value="1.0" />
+        <keyframe android:fraction="0.64" android:value="1.15" />
+        <keyframe android:fraction="0.68" android:value="1.0" />
+        <keyframe android:fraction="0.80" android:value="1.0" />
+        <keyframe android:fraction="0.92" android:value="0.5"
+            android:interpolator="@android:interpolator/accelerate_quad" />
+        <keyframe android:fraction="1" android:value="0.5" />
+    </propertyValuesHolder>
+</objectAnimator>

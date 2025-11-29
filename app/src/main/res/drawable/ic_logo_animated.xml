@@ -2,14 +2,67 @@
     android:drawable="@drawable/ic_logo">
 
     <target
+        android:name="mainGroup"
+        android:animation="@animator/logo_scale_pulse" />
+
+    <target
+        android:name="mainGroup"
+        android:animation="@animator/logo_float" />
+
+    <target
+        android:name="starGroup"
+        android:animation="@animator/logo_star_rotate" />
+
+    <target
+        android:name="starGroup"
+        android:animation="@animator/logo_star_sparkle" />
+
+    <target
+        android:name="starPath"
+        android:animation="@animator/logo_draw_star" />
+
+    <target
+        android:name="starPath"
+        android:animation="@animator/logo_shimmer" />
+
+    <target
+        android:name="starPath"
+        android:animation="@animator/logo_alpha_fade" />
+
+    <target
+        android:name="starPath"
+        android:animation="@animator/logo_stroke_breathe_star" />
+
+    <target
         android:name="shirtLeft"
         android:animation="@animator/logo_draw_shirt" />
+
+    <target
+        android:name="shirtLeft"
+        android:animation="@animator/logo_shimmer" />
+
+    <target
+        android:name="shirtLeft"
+        android:animation="@animator/logo_alpha_fade" />
+
+    <target
+        android:name="shirtLeft"
+        android:animation="@animator/logo_stroke_breathe" />
 
     <target
         android:name="shirtRight"
         android:animation="@animator/logo_draw_shirt" />
 
     <target
-        android:name="starPath"
-        android:animation="@animator/logo_draw_star" />
+        android:name="shirtRight"
+        android:animation="@animator/logo_shimmer" />
+
+    <target
+        android:name="shirtRight"
+        android:animation="@animator/logo_alpha_fade" />
+
+    <target
+        android:name="shirtRight"
+        android:animation="@animator/logo_stroke_breathe" />
+
 </animated-vector>

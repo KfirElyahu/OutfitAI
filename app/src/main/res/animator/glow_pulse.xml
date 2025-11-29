@@ -1,0 +1,16 @@
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:propertyName="alpha"
+    android:duration="5000"
+    android:repeatCount="infinite"
+    android:repeatMode="restart">
+    <keyframe android:fraction="0" android:value="0" />
+    <keyframe android:fraction="0.20" android:value="0.6"
+        android:interpolator="@android:interpolator/decelerate_quad" />
+    <keyframe android:fraction="0.45" android:value="0.8" />
+    <keyframe android:fraction="0.55" android:value="0.5" />
+    <keyframe android:fraction="0.65" android:value="0.9" />
+    <keyframe android:fraction="0.75" android:value="0.6" />
+    <keyframe android:fraction="0.90" android:value="0"
+        android:interpolator="@android:interpolator/accelerate_quad" />
+    <keyframe android:fraction="1" android:value="0" />
+</objectAnimator>
