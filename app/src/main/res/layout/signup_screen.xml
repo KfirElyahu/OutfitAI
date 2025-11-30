@@ -11,7 +11,7 @@
         android:id="@+id/welcomeTo_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="20dp"
         android:fontFamily="@font/rubik_bold"
         android:text="@string/welcome_to"
         android:textColor="@color/white"
@@ -59,19 +59,16 @@
         app:layout_constraintTop_toBottomOf="@+id/OutfitAI_text"
         app:srcCompat="@drawable/foreground" />
 
-    <androidx.appcompat.widget.AppCompatButton
+    <ImageButton
         android:id="@+id/Back_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginTop="50dp"
-        android:background="@drawable/white_small_button"
-        android:fontFamily="@font/rubik_bold"
-        android:foreground="@drawable/button_ripple"
-        android:text="@string/common_back"
-        android:textAllCaps="false"
-        android:textColor="@color/black"
-        android:textSize="20dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="10dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_back_arrow"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
