@@ -163,4 +163,7 @@
     <string name="rating_error_message">Failed to submit rating. Please try again.</string>
     <string name="rating_success_title">Thank You!</string>
     <string name="rating_success_message">Thanks for your feedback! We appreciate it.</string>
+
+    <string name="nav_settings">Settings</string>
+    <string name="nav_history">History</string>
 </resources>

@@ -163,4 +163,7 @@
     <string name="rating_error_message">שליחת הדירוג נכשלה. נסה/י שוב.</string>
     <string name="rating_success_title">תודה רבה!</string>
     <string name="rating_success_message">תודה על המשוב! אנחנו מעריכים את זה.</string>
+
+    <string name="nav_settings">הגדרות</string>
+    <string name="nav_history">היסטוריה</string>
 </resources>
