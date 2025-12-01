@@ -125,6 +125,13 @@ public class SettingsActivity extends AppCompatActivity {
             setupKeyboardHandling();
             syncProfilePicture();
         }
+
+        ImageButton languageBtn = findViewById(R.id.language_button);
+        if (languageBtn != null) {
+            languageBtn.setOnClickListener(v -> {
+                LanguageDialogHelper.showLanguageSelectionDialog(this, new LanguageManager(this), null);
+            });
+        }
     }
 
     private void loadUserData() {

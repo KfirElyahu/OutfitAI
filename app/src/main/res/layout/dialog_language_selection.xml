@@ -20,39 +20,44 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <RadioGroup
-        android:id="@+id/language_radio_group"
-        android:layout_width="match_parent"
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/language_toggle_group"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="24dp"
+        app:singleSelection="true"
+        app:selectionRequired="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/lang_dialog_title">
 
-        <RadioButton
-            android:id="@+id/radio_english"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:buttonTint="@color/green"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_english"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="120dp"
+            android:layout_height="56dp"
             android:fontFamily="@font/rubik_bold"
-            android:layoutDirection="ltr"
-            android:paddingStart="10dp"
             android:text="English"
-            android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="16sp"
+            android:textColor="@color/language_toggle_button_text_color"
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/language_toggle_button_stroke_color"
+            app:backgroundTint="@color/language_toggle_button_bg_color" />
 
-        <RadioButton
-            android:id="@+id/radio_hebrew"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:buttonTint="@color/green"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_hebrew"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="120dp"
+            android:layout_height="56dp"
             android:fontFamily="@font/rubik_bold"
-            android:layoutDirection="rtl"
-            android:paddingStart="10dp"
             android:text="עברית"
-            android:textColor="@color/white"
-            android:textSize="18sp" />
+            android:textSize="16sp"
+            android:textColor="@color/language_toggle_button_text_color"
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/language_toggle_button_stroke_color"
+            app:backgroundTint="@color/language_toggle_button_bg_color" />
 
-    </RadioGroup>
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btn_confirm_lang"
@@ -69,6 +74,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/language_radio_group" />
+        app:layout_constraintTop_toBottomOf="@id/language_toggle_group" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

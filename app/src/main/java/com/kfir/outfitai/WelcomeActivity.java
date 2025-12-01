@@ -19,14 +19,16 @@ import android.view.View;
 import android.view.Window;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.os.LocaleListCompat;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.button.MaterialButtonToggleGroup;
 
 import java.util.Locale;
 
@@ -37,6 +39,7 @@ public class WelcomeActivity extends AppCompatActivity {
     private Vibrator vibrator;
     private boolean beat1Triggered = false;
     private boolean beat2Triggered = false;
+    private boolean isLanguageDialogShowing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +55,9 @@ public class WelcomeActivity extends AppCompatActivity {
             findViewById(R.id.SignUp_button).setVisibility(View.INVISIBLE);
             findViewById(R.id.Skip_button).setVisibility(View.INVISIBLE);
 
-            showLanguageDialog();
+            LanguageDialogHelper.showLanguageSelectionDialog(this, languageManager, () -> {
+                languageManager.setFirstRunCompleted();
+            });
         } else {
             proceedToAppFlow();
         }
@@ -62,7 +67,9 @@ public class WelcomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        startLogoAnimation();
+        if (!isLanguageDialogShowing) {
+            startLogoAnimation();
+        }
     }
 
     @Override
@@ -220,6 +227,11 @@ public class WelcomeActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
+
+        ImageButton languageButton = findViewById(R.id.language_button);
+        languageButton.setOnClickListener(v -> {
+            LanguageDialogHelper.showLanguageSelectionDialog(this, languageManager, null);
+        });
     }
 
     private void animateButtonsEntrance(View... buttons) {
@@ -238,20 +250,21 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
     private void showLanguageDialog() {
+        isLanguageDialogShowing = true;
+        stopLogoAnimation();
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_language_selection, null);
 
-        RadioGroup radioGroup = view.findViewById(R.id.language_radio_group);
-        RadioButton radioEnglish = view.findViewById(R.id.radio_english);
-        RadioButton radioHebrew = view.findViewById(R.id.radio_hebrew);
+        MaterialButtonToggleGroup toggleGroup = view.findViewById(R.id.language_toggle_group);
         Button confirmButton = view.findViewById(R.id.btn_confirm_lang);
 
         String currentCode = languageManager.getCurrentLanguageCode();
 
         if (currentCode.equals("iw") || currentCode.equals("he")) {
-            radioHebrew.setChecked(true);
+            toggleGroup.check(R.id.btn_hebrew);
         } else {
-            radioEnglish.setChecked(true);
+            toggleGroup.check(R.id.btn_english);
         }
 
         builder.setView(view);
@@ -264,11 +277,13 @@ public class WelcomeActivity extends AppCompatActivity {
         }
 
         confirmButton.setOnClickListener(v -> {
-            String selectedLang = radioHebrew.isChecked() ? "he" : "en";
+            int selectedId = toggleGroup.getCheckedButtonId();
+            String selectedLang = (selectedId == R.id.btn_hebrew) ? "he" : "en";
 
             languageManager.setFirstRunCompleted();
-
             languageManager.setLocale(selectedLang);
+
+            isLanguageDialogShowing = false;
             dialog.dismiss();
 
             Configuration config = new Configuration(getResources().getConfiguration());
@@ -278,6 +293,10 @@ public class WelcomeActivity extends AppCompatActivity {
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                 recreate();
             }, 100);
+        });
+
+        dialog.setOnDismissListener(dialogInterface -> {
+            isLanguageDialogShowing = false;
         });
 
         dialog.show();

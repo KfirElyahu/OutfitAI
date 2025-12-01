@@ -73,6 +73,13 @@ public class SignUpActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
             }
         });
+
+        ImageButton languageBtn = findViewById(R.id.language_button);
+        if (languageBtn != null) {
+            languageBtn.setOnClickListener(v -> {
+                LanguageDialogHelper.showLanguageSelectionDialog(this, new LanguageManager(this), null);
+            });
+        }
     }
 
     private void setupPasswordToggle(EditText editText, ImageButton button) {

@@ -193,6 +193,13 @@ public class GenerateActivity extends AppCompatActivity {
         loadingPercentageText = findViewById(R.id.loading_percentage);
         loadingTimerText = findViewById(R.id.loading_timer);
         loadingStageText = findViewById(R.id.loading_stage_text);
+
+        ImageButton languageBtn = findViewById(R.id.language_button);
+        if (languageBtn != null) {
+            languageBtn.setOnClickListener(v -> {
+                LanguageDialogHelper.showLanguageSelectionDialog(this, new LanguageManager(this), null);
+            });
+        }
     }
 
     private void setupActivityLaunchers() {
