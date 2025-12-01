@@ -48,6 +48,7 @@ import com.google.genai.types.Blob;
 import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
+import android.widget.EditText;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -65,6 +66,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.getstream.photoview.dialog.PhotoViewDialog;
 
@@ -106,12 +113,19 @@ public class GenerateActivity extends AppCompatActivity {
     private int selectedPromptIndex = 0;
     private boolean isTryAllMode = false;
 
+    private FirebaseFirestore firebaseDb;
+    private FirebaseAuth mAuth;
+    private int selectedRating = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.generate_screen);
 
         dbHelper = new HelperUserDB(this);
+
+        firebaseDb = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance();
 
         sessionManager = new SessionManager(this);
         if (!sessionManager.isLoggedIn()) {
@@ -143,6 +157,9 @@ public class GenerateActivity extends AppCompatActivity {
             Intent intent = new Intent(GenerateActivity.this, HistoryActivity.class);
             startActivity(intent);
         });
+
+        View rateButton = findViewById(R.id.rate_button);
+        rateButton.setOnClickListener(v -> showRatingDialog());
 
         View uploadPersonButton = findViewById(R.id.upload_person_button);
         uploadPersonButton.setOnClickListener(v -> {
@@ -222,6 +239,146 @@ public class GenerateActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
             return sourceUri;
+        }
+    }
+
+    private void showRatingDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_rating, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        ImageView[] stars = new ImageView[5];
+        stars[0] = dialogView.findViewById(R.id.star_1);
+        stars[1] = dialogView.findViewById(R.id.star_2);
+        stars[2] = dialogView.findViewById(R.id.star_3);
+        stars[3] = dialogView.findViewById(R.id.star_4);
+        stars[4] = dialogView.findViewById(R.id.star_5);
+
+        TextView ratingLabel = dialogView.findViewById(R.id.rating_label);
+        EditText feedbackInput = dialogView.findViewById(R.id.rating_feedback_input);
+        View submitButton = dialogView.findViewById(R.id.rating_submit_button);
+        View cancelButton = dialogView.findViewById(R.id.rating_cancel_button);
+
+        selectedRating = 0;
+
+        for (int i = 0; i < 5; i++) {
+            final int starIndex = i + 1;
+            stars[i].setOnClickListener(v -> {
+                selectedRating = starIndex;
+                updateStarDisplay(stars, starIndex);
+                updateRatingLabel(ratingLabel, starIndex);
+            });
+        }
+
+        submitButton.setOnClickListener(v -> {
+            if (selectedRating == 0) {
+                DialogUtils.showDialog(this,
+                        getString(R.string.rating_error_title),
+                        getString(R.string.rating_error_no_stars));
+                return;
+            }
+
+            String feedback = feedbackInput.getText().toString().trim();
+            submitRatingToFirebase(selectedRating, feedback, dialog);
+        });
+
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
+
+    private void updateStarDisplay(ImageView[] stars, int rating) {
+        for (int i = 0; i < 5; i++) {
+            if (i < rating) {
+                stars[i].setImageResource(R.drawable.ic_star_filled);
+            } else {
+                stars[i].setImageResource(R.drawable.ic_star_outline);
+            }
+        }
+    }
+
+    private void updateRatingLabel(TextView label, int rating) {
+        String[] ratingTexts = {
+                getString(R.string.rating_1_star),
+                getString(R.string.rating_2_stars),
+                getString(R.string.rating_3_stars),
+                getString(R.string.rating_4_stars),
+                getString(R.string.rating_5_stars)
+        };
+
+        if (rating >= 1 && rating <= 5) {
+            label.setText(ratingTexts[rating - 1]);
+            label.setTextColor(ContextCompat.getColor(this, R.color.green));
+        }
+    }
+
+    private void submitRatingToFirebase(int rating, String feedback, AlertDialog dialog) {
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            DialogUtils.showDialog(this,
+                    getString(R.string.rating_error_title),
+                    "No internet connection. Please try again later.");
+            return;
+        }
+
+        String userEmail = currentUserEmail != null ? currentUserEmail : "anonymous";
+        String userId = "anonymous";
+        String username = "Anonymous";
+
+        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+        if (firebaseUser != null) {
+            userId = firebaseUser.getUid();
+        }
+
+        if (currentUserEmail != null) {
+            if (currentUserEmail.equals("guest_user")) {
+                username = "Guest";
+            } else {
+                User user = dbHelper.getUserDetails(currentUserEmail);
+                if (user != null && user.getUsername() != null) {
+                    username = user.getUsername();
+                }
+            }
+        }
+
+        Map<String, Object> ratingData = new HashMap<>();
+        ratingData.put("rating", rating);
+        ratingData.put("feedback", feedback);
+        ratingData.put("userEmail", userEmail);
+        ratingData.put("userId", userId);
+        ratingData.put("username", username);
+        ratingData.put("timestamp", System.currentTimeMillis());
+        ratingData.put("appVersion", getAppVersion());
+        ratingData.put("deviceInfo", android.os.Build.MODEL + " - Android " + android.os.Build.VERSION.RELEASE);
+
+        firebaseDb.collection("app_ratings")
+                .add(ratingData)
+                .addOnSuccessListener(documentReference -> {
+                    dialog.dismiss();
+
+                    userPrefs.edit().putBoolean("has_rated", true).apply();
+                    userPrefs.edit().putLong("last_rating_time", System.currentTimeMillis()).apply();
+
+                    DialogUtils.showDialog(this,
+                            getString(R.string.rating_success_title),
+                            getString(R.string.rating_success_message));
+                })
+                .addOnFailureListener(e -> {
+                    DialogUtils.showDialog(this,
+                            getString(R.string.rating_error_title),
+                            getString(R.string.rating_error_message));
+                });
+    }
+
+    private String getAppVersion() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            return "unknown";
         }
     }
 

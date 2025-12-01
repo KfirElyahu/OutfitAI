@@ -145,4 +145,22 @@
     <string name="save_error_gallery_failed">לא ניתן לשמור את התמונה בגלריה.</string>
     <string name="save_error_failed_title">הפעולה נכשלה</string>
 
+    <string name="rating_title">דירוג החוויה</string>
+    <string name="rating_subtitle">איך החוויה שלך ב-OutfitAI?</string>
+    <string name="rating_tap_to_rate">לחץ/י על כוכב לדירוג</string>
+    <string name="rating_hint_feedback">כתוב/י משוב כאן (אופציונלי)...</string>
+    <string name="rating_btn_submit">שליחה</string>
+    <string name="rating_btn_cancel">אולי אחר כך</string>
+
+    <string name="rating_1_star">נורא</string>
+    <string name="rating_2_stars">גרוע</string>
+    <string name="rating_3_stars">בסדר</string>
+    <string name="rating_4_stars">טוב</string>
+    <string name="rating_5_stars">מצוין!</string>
+
+    <string name="rating_error_title">שגיאת דירוג</string>
+    <string name="rating_error_no_stars">אנא בחר/י דירוג כוכבים תחילה.</string>
+    <string name="rating_error_message">שליחת הדירוג נכשלה. נסה/י שוב.</string>
+    <string name="rating_success_title">תודה רבה!</string>
+    <string name="rating_success_message">תודה על המשוב! אנחנו מעריכים את זה.</string>
 </resources>

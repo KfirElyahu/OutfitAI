@@ -145,4 +145,22 @@
     <string name="save_error_gallery_failed">Could not save image to gallery.</string>
     <string name="save_error_failed_title">Failed</string>
 
+    <string name="rating_title">Rate Experience</string>
+    <string name="rating_subtitle">How are you liking OutfitAI?</string>
+    <string name="rating_tap_to_rate">Tap a star to rate</string>
+    <string name="rating_hint_feedback">Write your feedback here (optional)...</string>
+    <string name="rating_btn_submit">Submit</string>
+    <string name="rating_btn_cancel">Maybe Later</string>
+
+    <string name="rating_1_star">Terrible</string>
+    <string name="rating_2_stars">Bad</string>
+    <string name="rating_3_stars">Okay</string>
+    <string name="rating_4_stars">Good</string>
+    <string name="rating_5_stars">Excellent!</string>
+
+    <string name="rating_error_title">Rating Error</string>
+    <string name="rating_error_no_stars">Please select a star rating first.</string>
+    <string name="rating_error_message">Failed to submit rating. Please try again.</string>
+    <string name="rating_success_title">Thank You!</string>
+    <string name="rating_success_message">Thanks for your feedback! We appreciate it.</string>
 </resources>
