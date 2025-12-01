@@ -152,14 +152,22 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
     private void triggerWeakVibration() {
-        if (vibrator != null) {
-            vibrator.vibrate(VibrationEffect.createOneShot(30, 50));
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK));
+            } else {
+                vibrator.vibrate(VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
         }
     }
 
     private void triggerStrongVibration() {
-        if (vibrator != null) {
-            vibrator.vibrate(VibrationEffect.createOneShot(50, 100));
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK));
+            } else {
+                vibrator.vibrate(VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE));
+            }
         }
     }
 
