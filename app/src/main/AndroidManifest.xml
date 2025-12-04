@@ -52,15 +52,6 @@
             android:name=".GenerateActivity"
             android:screenOrientation="portrait"
             tools:ignore="LockedOrientationActivity" />
-        <activity
-            android:name=".SettingsActivity"
-            android:windowSoftInputMode="adjustResize"
-            android:screenOrientation="portrait"
-            tools:ignore="LockedOrientationActivity" />
-        <activity
-            android:name=".HistoryActivity"
-            android:screenOrientation="portrait"
-            tools:ignore="LockedOrientationActivity" />
 
         <meta-data
             android:name="preloaded_fonts"
