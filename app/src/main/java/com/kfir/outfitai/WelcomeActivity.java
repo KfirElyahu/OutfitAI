@@ -286,13 +286,6 @@ public class WelcomeActivity extends AppCompatActivity {
             isLanguageDialogShowing = false;
             dialog.dismiss();
 
-            Configuration config = new Configuration(getResources().getConfiguration());
-            config.setLocale(new Locale(selectedLang));
-            Context tempContext = createConfigurationContext(config);
-
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                recreate();
-            }, 100);
         });
 
         dialog.setOnDismissListener(dialogInterface -> {

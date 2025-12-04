@@ -14,6 +14,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -65,6 +67,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -77,6 +80,7 @@ public class GenerateFragment extends Fragment {
 
     private ActivityResultLauncher<PickVisualMediaRequest> pickMediaLauncher;
     private ActivityResultLauncher<Uri> takePictureLauncher;
+    private ActivityResultLauncher<Intent> speechRecognizerLauncher;
     private Uri tempImageUri;
 
     private Uri selectedPersonUri;
@@ -95,6 +99,7 @@ public class GenerateFragment extends Fragment {
     private ImageTarget currentImageTarget;
 
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1001;
+    private static final int RECORD_AUDIO_PERMISSION_REQUEST_CODE = 1002;
 
     private View loadingOverlay;
     private ProgressBar progressBar;
@@ -114,18 +119,21 @@ public class GenerateFragment extends Fragment {
     private FirebaseFirestore firebaseDb;
     private FirebaseAuth mAuth;
     private int selectedRating = 0;
+    private TextToSpeech textToSpeech;
+    private boolean isTtsInitialized = false;
+
+    private EditText currentFeedbackInput;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Initialize launchers in onCreate (must be done before Fragment is started)
         setupActivityLaunchers();
+        initTextToSpeech();
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Inflate the layout for this fragment (ensure you renamed generate_screen.xml to fragment_generate.xml)
         return inflater.inflate(R.layout.fragment_generate, container, false);
     }
 
@@ -139,7 +147,6 @@ public class GenerateFragment extends Fragment {
         mAuth = FirebaseAuth.getInstance();
 
         sessionManager = new SessionManager(requireContext());
-        // If not logged in, redirect to WelcomeActivity (Host activity should handle this usually, but keeping logic here)
         if (!sessionManager.isLoggedIn()) {
             startActivity(new Intent(requireContext(), WelcomeActivity.class));
             requireActivity().finish();
@@ -149,8 +156,6 @@ public class GenerateFragment extends Fragment {
         userPrefs = requireContext().getSharedPreferences("Prefs_" + currentUserEmail, Context.MODE_PRIVATE);
 
         loadPrompts();
-
-        // --- Removed Settings and History Buttons Logic (Handled by Bottom Navigation now) ---
 
         View rateButton = view.findViewById(R.id.rate_button);
         rateButton.setOnClickListener(v -> showRatingDialog());
@@ -196,6 +201,21 @@ public class GenerateFragment extends Fragment {
         }
     }
 
+    private void initTextToSpeech() {
+        textToSpeech = new TextToSpeech(requireContext(), status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                int result = textToSpeech.setLanguage(Locale.US);
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    isTtsInitialized = false;
+                } else {
+                    isTtsInitialized = true;
+                }
+            } else {
+                isTtsInitialized = false;
+            }
+        });
+    }
+
     private void setupActivityLaunchers() {
         pickMediaLauncher = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
             if (uri != null) {
@@ -216,6 +236,28 @@ public class GenerateFragment extends Fragment {
                 DialogUtils.showDialog(requireContext(), getString(R.string.generate_error_camera_title), getString(R.string.generate_error_camera_capture));
             }
         });
+
+        speechRecognizerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == requireActivity().RESULT_OK && result.getData() != null) {
+                        ArrayList<String> speechResults = result.getData()
+                                .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                        if (speechResults != null && !speechResults.isEmpty()) {
+                            String spokenText = speechResults.get(0);
+                            if (currentFeedbackInput != null) {
+                                String existingText = currentFeedbackInput.getText().toString();
+                                if (existingText.isEmpty()) {
+                                    currentFeedbackInput.setText(spokenText);
+                                } else {
+                                    currentFeedbackInput.setText(existingText + " " + spokenText);
+                                }
+                                currentFeedbackInput.setSelection(currentFeedbackInput.getText().length());
+                            }
+                        }
+                    }
+                }
+        );
     }
 
     private Uri saveUriToInternalStorage(Uri sourceUri) {
@@ -265,6 +307,11 @@ public class GenerateFragment extends Fragment {
         View submitButton = dialogView.findViewById(R.id.rating_submit_button);
         View cancelButton = dialogView.findViewById(R.id.rating_cancel_button);
 
+        ImageButton btnSpeechToText = dialogView.findViewById(R.id.btn_speech_to_text);
+        ImageButton btnTextToSpeech = dialogView.findViewById(R.id.btn_text_to_speech);
+
+        currentFeedbackInput = feedbackInput;
+
         selectedRating = 0;
 
         for (int i = 0; i < 5; i++) {
@@ -276,6 +323,15 @@ public class GenerateFragment extends Fragment {
             });
         }
 
+        btnSpeechToText.setOnClickListener(v -> {
+            startSpeechToText();
+        });
+
+        btnTextToSpeech.setOnClickListener(v -> {
+            String textToRead = feedbackInput.getText().toString().trim();
+            speakText(textToRead);
+        });
+
         submitButton.setOnClickListener(v -> {
             if (selectedRating == 0) {
                 DialogUtils.showDialog(requireContext(),
@@ -284,13 +340,89 @@ public class GenerateFragment extends Fragment {
                 return;
             }
 
+            if (textToSpeech != null && textToSpeech.isSpeaking()) {
+                textToSpeech.stop();
+            }
+
             String feedback = feedbackInput.getText().toString().trim();
             submitRatingToFirebase(selectedRating, feedback, dialog);
         });
 
-        cancelButton.setOnClickListener(v -> dialog.dismiss());
+        cancelButton.setOnClickListener(v -> {
+            if (textToSpeech != null && textToSpeech.isSpeaking()) {
+                textToSpeech.stop();
+            }
+            currentFeedbackInput = null;
+            dialog.dismiss();
+        });
+
+        dialog.setOnDismissListener(dialogInterface -> {
+            if (textToSpeech != null && textToSpeech.isSpeaking()) {
+                textToSpeech.stop();
+            }
+            currentFeedbackInput = null;
+        });
 
         dialog.show();
+    }
+
+    private void startSpeechToText() {
+        if (!isSpeechRecognitionAvailable()) {
+            Toast.makeText(requireContext(), getString(R.string.speech_not_supported), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, RECORD_AUDIO_PERMISSION_REQUEST_CODE);
+            return;
+        }
+
+        launchSpeechRecognizer();
+    }
+
+    private boolean isSpeechRecognitionAvailable() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        return intent.resolveActivity(requireContext().getPackageManager()) != null;
+    }
+
+    private void launchSpeechRecognizer() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+
+        LanguageManager languageManager = new LanguageManager(requireContext());
+        String currentLangCode = languageManager.getCurrentLanguageCode();
+
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, currentLangCode);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, currentLangCode);
+        intent.putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, currentLangCode);
+
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.listening));
+
+        try {
+            speechRecognizerLauncher.launch(intent);
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), getString(R.string.speech_error), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void speakText(String text) {
+        if (text.isEmpty()) {
+            Toast.makeText(requireContext(), getString(R.string.tts_no_text), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!isTtsInitialized) {
+            Toast.makeText(requireContext(), getString(R.string.tts_not_available), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (textToSpeech.isSpeaking()) {
+            textToSpeech.stop();
+        }
+
+        Toast.makeText(requireContext(), getString(R.string.tts_speaking), Toast.LENGTH_SHORT).show();
+        textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null, "rating_feedback");
     }
 
     private void updateStarDisplay(ImageView[] stars, int rating) {
@@ -867,6 +999,12 @@ public class GenerateFragment extends Fragment {
             } else {
                 DialogUtils.showDialog(requireContext(), getString(R.string.generate_permission_camera), getString(R.string.generate_permission_camera_msg));
             }
+        } else if (requestCode == RECORD_AUDIO_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                launchSpeechRecognizer();
+            } else {
+                Toast.makeText(requireContext(), "Microphone permission is required for speech recognition", Toast.LENGTH_SHORT).show();
+            }
         } else if (requestCode == ImageSaveHelper.WRITE_STORAGE_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 if (currentVisibleDialogUri != null) {
@@ -902,6 +1040,16 @@ public class GenerateFragment extends Fragment {
             clothingSelectedImage.setVisibility(View.VISIBLE);
             clothingIcon.setVisibility(View.GONE);
             clothingUploadIcon.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+            textToSpeech = null;
         }
     }
 }

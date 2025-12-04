@@ -140,11 +140,47 @@
 
     </androidx.cardview.widget.CardView>
 
+    <LinearLayout
+        android:id="@+id/voice_buttons_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/feedback_card">
+
+        <ImageButton
+            android:id="@+id/btn_speech_to_text"
+            android:layout_width="56dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/voice_button_background"
+            android:foreground="@drawable/button_ripple"
+            android:contentDescription="@string/speech_to_text_desc"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_mic" />
+
+        <ImageButton
+            android:id="@+id/btn_text_to_speech"
+            android:layout_width="56dp"
+            android:layout_height="48dp"
+            android:background="@drawable/voice_button_background"
+            android:foreground="@drawable/button_ripple"
+            android:contentDescription="@string/text_to_speech_desc"
+            android:padding="12dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_speaker" />
+
+    </LinearLayout>
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/rating_submit_button"
         android:layout_width="0dp"
         android:layout_height="50dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="16dp"
         android:background="@drawable/green_large_button"
         android:fontFamily="@font/rubik_bold"
         android:foreground="@drawable/button_ripple"
@@ -154,7 +190,7 @@
         android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/feedback_card" />
+        app:layout_constraintTop_toBottomOf="@id/voice_buttons_container" />
 
     <TextView
         android:id="@+id/rating_cancel_button"

@@ -51,8 +51,6 @@ public class LanguageDialogHelper {
             if (listener != null) {
                 listener.onLanguageSelected();
             }
-
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(activity::recreate, 100);
         });
 
         dialog.show();
