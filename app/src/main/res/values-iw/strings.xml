@@ -166,4 +166,13 @@
 
     <string name="nav_settings">הגדרות</string>
     <string name="nav_history">היסטוריה</string>
+
+    <string name="speech_to_text_desc">תדבר כדי לכתוב משוב</string>
+    <string name="text_to_speech_desc">הקראת המשוב בקול רם</string>
+    <string name="speech_not_supported">זיהוי דיבור אינו נתמך במכשיר זה</string>
+    <string name="speech_error">שגיאה בזיהוי הדיבור. נא לנסות שוב.</string>
+    <string name="tts_not_available">המרת טקסט לדיבור אינה זמינה</string>
+    <string name="tts_no_text">אין טקסט להקראה</string>
+    <string name="tts_speaking">מקריא משוב...</string>
+    <string name="listening">מאזין...</string>
 </resources>
