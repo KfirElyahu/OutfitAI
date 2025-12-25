@@ -2,13 +2,17 @@ package com.kfir.outfitai;
 
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
+
+import java.lang.reflect.Field;
 
 public class GenerateActivity extends AppCompatActivity {
 
@@ -25,6 +29,8 @@ public class GenerateActivity extends AppCompatActivity {
 
         MainPagerAdapter pagerAdapter = new MainPagerAdapter(this);
         viewPager.setAdapter(pagerAdapter);
+
+        reduceDragSensitivity(viewPager);
 
         viewPager.setUserInputEnabled(true);
 
@@ -66,5 +72,20 @@ public class GenerateActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void reduceDragSensitivity(ViewPager2 viewPager) {
+        try {
+            View child = viewPager.getChildAt(0);
+            if (child instanceof RecyclerView) {
+                RecyclerView recyclerView = (RecyclerView) child;
+                Field touchSlopField = RecyclerView.class.getDeclaredField("mTouchSlop");
+                touchSlopField.setAccessible(true);
+                int touchSlop = (int) touchSlopField.get(recyclerView);
+                touchSlopField.set(recyclerView, touchSlop * 4);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
