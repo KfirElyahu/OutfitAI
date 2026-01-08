@@ -812,7 +812,7 @@ public class GenerateFragment extends Fragment {
             Content content = Content.fromParts(textPart, personImagePart, clothingImagePart);
 
             GenerateContentResponse response = client.models.generateContent(
-                    "gemini-2.5-flash-image-preview",
+                    "gemini-2.5-flash-image",
                     content,
                     null);
 

@@ -63,8 +63,8 @@ configurations.all {
 dependencies {
     implementation("io.getstream:photoview-dialog:1.0.3")
     implementation("com.github.bumptech.glide:glide:5.0.5")
-    implementation("com.google.genai:google-genai:1.28.0")
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation("com.google.genai:google-genai:1.32.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-analytics")
