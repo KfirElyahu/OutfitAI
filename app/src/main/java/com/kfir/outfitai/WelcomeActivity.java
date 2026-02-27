@@ -232,6 +232,13 @@ public class WelcomeActivity extends AppCompatActivity {
         languageButton.setOnClickListener(v -> {
             LanguageDialogHelper.showLanguageSelectionDialog(this, languageManager, null);
         });
+
+        ImageButton reviewsButton = findViewById(R.id.reviews_button);
+        if (reviewsButton != null) {
+            reviewsButton.setOnClickListener(v -> {
+                startActivity(new Intent(this, FeedbacksActivity.class));
+            });
+        }
     }
 
     private void animateButtonsEntrance(View... buttons) {

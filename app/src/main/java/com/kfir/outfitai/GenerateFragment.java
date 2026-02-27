@@ -199,6 +199,13 @@ public class GenerateFragment extends Fragment {
                 LanguageDialogHelper.showLanguageSelectionDialog(requireActivity(), new LanguageManager(requireContext()), null);
             });
         }
+
+        ImageButton reviewsButton = view.findViewById(R.id.reviews_button);
+        if (reviewsButton != null) {
+            reviewsButton.setOnClickListener(v -> {
+                startActivity(new Intent(requireContext(), FeedbacksActivity.class));
+            });
+        }
     }
 
     private void initTextToSpeech() {

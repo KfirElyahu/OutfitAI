@@ -80,6 +80,13 @@ public class SignUpActivity extends AppCompatActivity {
                 LanguageDialogHelper.showLanguageSelectionDialog(this, new LanguageManager(this), null);
             });
         }
+
+        ImageButton reviewsButton = findViewById(R.id.reviews_button);
+        if (reviewsButton != null) {
+            reviewsButton.setOnClickListener(v -> {
+                startActivity(new Intent(this, FeedbacksActivity.class));
+            });
+        }
     }
 
     private void setupPasswordToggle(EditText editText, ImageButton button) {

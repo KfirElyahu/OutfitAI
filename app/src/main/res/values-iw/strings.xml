@@ -175,4 +175,7 @@
     <string name="tts_no_text">אין טקסט להקראה</string>
     <string name="tts_speaking">מקריא משוב...</string>
     <string name="listening">מאזין...</string>
+
+    <string name="feedbacks_title">משובי משתמשים</string>
+    <string name="feedbacks_empty">אין משובים עדיין.</string>
 </resources>

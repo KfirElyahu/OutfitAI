@@ -85,9 +85,6 @@ public class SettingsActivity extends AppCompatActivity {
         editConfirmPassword = findViewById(R.id.edit_confirm_password);
         profileImageView = findViewById(R.id.profile_image);
 
-        View backButton = findViewById(R.id.Back_button);
-        backButton.setOnClickListener(v -> finish());
-
         View saveButton = findViewById(R.id.save_changes_button);
         saveButton.setOnClickListener(v -> saveChanges());
 
@@ -130,6 +127,13 @@ public class SettingsActivity extends AppCompatActivity {
         if (languageBtn != null) {
             languageBtn.setOnClickListener(v -> {
                 LanguageDialogHelper.showLanguageSelectionDialog(this, new LanguageManager(this), null);
+            });
+        }
+
+        ImageButton reviewsButton = findViewById(R.id.reviews_button);
+        if (reviewsButton != null) {
+            reviewsButton.setOnClickListener(v -> {
+                startActivity(new Intent(this, FeedbacksActivity.class));
             });
         }
     }

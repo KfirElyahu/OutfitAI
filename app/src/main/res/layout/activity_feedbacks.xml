@@ -6,60 +6,58 @@
     android:background="@drawable/background">
 
     <ImageButton
-        android:id="@+id/language_button"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="50dp"
-        android:layout_marginEnd="20dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:padding="10dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_language"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ImageButton
-        android:id="@+id/reviews_button"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginEnd="8dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:padding="10dp"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_reviews"
-        app:layout_constraintBottom_toBottomOf="@+id/language_button"
-        app:layout_constraintEnd_toStartOf="@+id/language_button"
-        app:layout_constraintTop_toTopOf="@+id/language_button" />
-
-    <TextView
-        android:id="@+id/history_title"
+        android:id="@+id/Back_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="50dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="10dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_back_arrow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/feedbacks_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:fontFamily="@font/rubik_bold"
-        android:text="@string/history_title"
+        android:text="@string/feedbacks_title"
         android:textColor="@color/white"
         android:textSize="24sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/language_button"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="@+id/Back_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/language_button" />
+        app:layout_constraintTop_toTopOf="@+id/Back_button" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/history_recycler_view"
+        android:id="@+id/feedbacks_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:paddingBottom="16dp"
         android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/history_title" />
+        app:layout_constraintTop_toBottomOf="@id/feedbacks_title" />
 
-    <TextView
-        android:id="@+id/empty_history_text"
+    <ProgressBar
+        android:id="@+id/feedbacks_progress_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/history_empty"
+        android:indeterminateTint="@color/green"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/empty_feedbacks_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/feedbacks_empty"
         android:textColor="@color/dark_gray"
         android:fontFamily="@font/rubik_bold"
         android:textSize="18sp"

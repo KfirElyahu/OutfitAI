@@ -1,5 +1,6 @@
 package com.kfir.outfitai;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -61,6 +62,13 @@ public class HistoryFragment extends Fragment {
         if (languageBtn != null) {
             languageBtn.setOnClickListener(v -> {
                 LanguageDialogHelper.showLanguageSelectionDialog(requireActivity(), new LanguageManager(requireContext()), null);
+            });
+        }
+
+        ImageButton reviewsButton = view.findViewById(R.id.reviews_button);
+        if (reviewsButton != null) {
+            reviewsButton.setOnClickListener(v -> {
+                startActivity(new Intent(requireContext(), FeedbacksActivity.class));
             });
         }
     }

@@ -1,5 +1,6 @@
 package com.kfir.outfitai;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -32,9 +33,6 @@ public class HistoryActivity extends AppCompatActivity {
         SessionManager sessionManager = new SessionManager(this);
         String currentUserEmail = sessionManager.getCurrentUserEmail();
 
-        View backButton = findViewById(R.id.Back_button);
-        backButton.setOnClickListener(v -> finish());
-
         RecyclerView recyclerView = findViewById(R.id.history_recycler_view);
         TextView emptyText = findViewById(R.id.empty_history_text);
 
@@ -56,6 +54,13 @@ public class HistoryActivity extends AppCompatActivity {
         if (languageBtn != null) {
             languageBtn.setOnClickListener(v -> {
                 LanguageDialogHelper.showLanguageSelectionDialog(this, new LanguageManager(this), null);
+            });
+        }
+
+        ImageButton reviewsButton = findViewById(R.id.reviews_button);
+        if (reviewsButton != null) {
+            reviewsButton.setOnClickListener(v -> {
+                startActivity(new Intent(this, FeedbacksActivity.class));
             });
         }
     }

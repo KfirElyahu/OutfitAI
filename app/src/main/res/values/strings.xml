@@ -175,4 +175,7 @@
     <string name="tts_no_text">No text to read</string>
     <string name="tts_speaking">Reading feedback...</string>
     <string name="listening">Listening...</string>
+
+    <string name="feedbacks_title">User Feedbacks</string>
+    <string name="feedbacks_empty">No feedbacks yet.</string>
 </resources>
