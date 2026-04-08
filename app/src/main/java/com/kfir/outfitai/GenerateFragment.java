@@ -1,6 +1,7 @@
 package com.kfir.outfitai;
 
 import android.Manifest;
+import android.animation.ValueAnimator;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +21,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.LinearInterpolator;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.GridLayout;
@@ -73,6 +75,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.getstream.photoview.dialog.PhotoViewDialog;
 
@@ -97,7 +100,6 @@ public class GenerateFragment extends Fragment {
 
     private enum ImageTarget { PERSON, CLOTHING }
     private ImageTarget currentImageTarget;
-
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1001;
     private static final int RECORD_AUDIO_PERMISSION_REQUEST_CODE = 1002;
 
@@ -108,9 +110,8 @@ public class GenerateFragment extends Fragment {
     private TextView loadingStageText;
 
     private Timer progressTimer;
+    private ValueAnimator simulatedProgressAnimator;
     private long startTimeMillis;
-    private int currentProgress = 0;
-
     private List<String> availablePrompts;
     private String currentPrompt;
     private int selectedPromptIndex = 0;
@@ -140,7 +141,6 @@ public class GenerateFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         dbHelper = new HelperUserDB(requireContext());
 
         firebaseDb = FirebaseFirestore.getInstance();
@@ -156,7 +156,6 @@ public class GenerateFragment extends Fragment {
         userPrefs = requireContext().getSharedPreferences("Prefs_" + currentUserEmail, Context.MODE_PRIVATE);
 
         loadPrompts();
-
         View rateButton = view.findViewById(R.id.rate_button);
         rateButton.setOnClickListener(v -> showRatingDialog());
 
@@ -165,13 +164,11 @@ public class GenerateFragment extends Fragment {
             currentImageTarget = ImageTarget.PERSON;
             showImagePickerDialog();
         });
-
         View uploadClothingButton = view.findViewById(R.id.upload_clothing_button);
         uploadClothingButton.setOnClickListener(v -> {
             currentImageTarget = ImageTarget.CLOTHING;
             showImagePickerDialog();
         });
-
         View generateButton = view.findViewById(R.id.generate_button);
         generateButton.setOnClickListener(v -> generateOutfit());
 
@@ -184,7 +181,6 @@ public class GenerateFragment extends Fragment {
                 showGeneratedImageDialog(0);
             }
         });
-
         setupGridClickListeners(view);
 
         loadingOverlay = view.findViewById(R.id.loading_overlay);
@@ -234,7 +230,6 @@ public class GenerateFragment extends Fragment {
                         getString(R.string.generate_msg_no_image));
             }
         });
-
         takePictureLauncher = registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
             if (success) {
                 Uri persistentUri = saveUriToInternalStorage(tempImageUri);
@@ -248,8 +243,7 @@ public class GenerateFragment extends Fragment {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == requireActivity().RESULT_OK && result.getData() != null) {
-                        ArrayList<String> speechResults = result.getData()
-                                .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                        ArrayList<String> speechResults = result.getData().getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                         if (speechResults != null && !speechResults.isEmpty()) {
                             String spokenText = speechResults.get(0);
                             if (currentFeedbackInput != null) {
@@ -318,7 +312,6 @@ public class GenerateFragment extends Fragment {
         ImageButton btnTextToSpeech = dialogView.findViewById(R.id.btn_text_to_speech);
 
         currentFeedbackInput = feedbackInput;
-
         selectedRating = 0;
 
         for (int i = 0; i < 5; i++) {
@@ -333,12 +326,10 @@ public class GenerateFragment extends Fragment {
         btnSpeechToText.setOnClickListener(v -> {
             startSpeechToText();
         });
-
         btnTextToSpeech.setOnClickListener(v -> {
             String textToRead = feedbackInput.getText().toString().trim();
             speakText(textToRead);
         });
-
         submitButton.setOnClickListener(v -> {
             if (selectedRating == 0) {
                 DialogUtils.showDialog(requireContext(),
@@ -354,7 +345,6 @@ public class GenerateFragment extends Fragment {
             String feedback = feedbackInput.getText().toString().trim();
             submitRatingToFirebase(selectedRating, feedback, dialog);
         });
-
         cancelButton.setOnClickListener(v -> {
             if (textToSpeech != null && textToSpeech.isSpeaking()) {
                 textToSpeech.stop();
@@ -362,14 +352,12 @@ public class GenerateFragment extends Fragment {
             currentFeedbackInput = null;
             dialog.dismiss();
         });
-
         dialog.setOnDismissListener(dialogInterface -> {
             if (textToSpeech != null && textToSpeech.isSpeaking()) {
                 textToSpeech.stop();
             }
             currentFeedbackInput = null;
         });
-
         dialog.show();
     }
 
@@ -405,7 +393,6 @@ public class GenerateFragment extends Fragment {
         intent.putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, currentLangCode);
 
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.listening));
-
         try {
             speechRecognizerLauncher.launch(intent);
         } catch (Exception e) {
@@ -450,7 +437,6 @@ public class GenerateFragment extends Fragment {
                 getString(R.string.rating_4_stars),
                 getString(R.string.rating_5_stars)
         };
-
         if (rating >= 1 && rating <= 5) {
             label.setText(ratingTexts[rating - 1]);
             label.setTextColor(ContextCompat.getColor(requireContext(), R.color.green));
@@ -594,7 +580,6 @@ public class GenerateFragment extends Fragment {
         tryAllButton.setTextColor(Color.BLACK);
         tryAllButton.setTypeface(getResources().getFont(R.font.roboto_bold));
         tryAllButton.setBackgroundResource(R.drawable.green_large_button);
-
         listView.addHeaderView(tryAllButton);
 
         List<String> displayList = new ArrayList<>();
@@ -625,7 +610,6 @@ public class GenerateFragment extends Fragment {
 
         builder.setView(listView);
         AlertDialog dialog = builder.create();
-
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(R.drawable.dialog_background);
         }
@@ -635,7 +619,6 @@ public class GenerateFragment extends Fragment {
             Toast.makeText(requireContext(), getString(R.string.prompt_msg_selected_all), Toast.LENGTH_SHORT).show();
             dialog.dismiss();
         });
-
         listView.setOnItemClickListener((parent, view, position, id) -> {
             if (position > 0) {
                 int promptIndex = position - 1;
@@ -649,7 +632,6 @@ public class GenerateFragment extends Fragment {
                 dialog.dismiss();
             }
         });
-
         dialog.show();
     }
 
@@ -661,10 +643,16 @@ public class GenerateFragment extends Fragment {
             return;
         }
 
+        if (!NetworkUtils.isNetworkAvailable(requireContext())) {
+            DialogUtils.showDialog(requireContext(),
+                    getString(R.string.common_error),
+                    "No internet connection. Please connect and try again.");
+            return;
+        }
+
         startLoadingAnimation();
         View root = getView();
         if (root == null) return;
-
         View generateButton = root.findViewById(R.id.generate_button);
         generateButton.setEnabled(false);
 
@@ -673,19 +661,28 @@ public class GenerateFragment extends Fragment {
 
         executor.execute(() -> {
             try {
+                byte[] personImageBytes = getBytesFromUri(selectedPersonUri);
+                byte[] clothingImageBytes = getBytesFromUri(selectedClothingUri);
+
                 final String apiKey = ApiConfig.GEMINI_API_KEY;
 
                 if (isTryAllMode) {
                     List<Bitmap> results = new ArrayList<>();
                     int limit = Math.min(availablePrompts.size(), 4);
+                    int stepSize = 100 / limit;
 
                     for (int i = 0; i < limit; i++) {
-                        final int currentIdx = i;
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> loadingStageText.setText(getString(R.string.loading_stage_designing_variation, currentIdx + 1)));
-                        }
+                        int startProgress = i * stepSize;
+                        int targetProgress = (i + 1) * stepSize;
 
-                        byte[] resultBytes = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri, availablePrompts.get(i));
+                        AtomicBoolean isApiRunning = new AtomicBoolean(true);
+                        startSimulatedProgress(startProgress, targetProgress, 11500, isApiRunning);
+
+                        byte[] resultBytes = callGeminiAPI(apiKey, personImageBytes, clothingImageBytes, availablePrompts.get(i));
+
+                        isApiRunning.set(false);
+                        updateProgressUIOnly(targetProgress);
+
                         if (resultBytes != null) {
                             Bitmap bitmap = BitmapFactory.decodeByteArray(resultBytes, 0, resultBytes.length);
                             if (bitmap != null) results.add(bitmap);
@@ -706,10 +703,13 @@ public class GenerateFragment extends Fragment {
                     }
 
                 } else {
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(() -> loadingStageText.setText(getString(R.string.loading_stage_ai_designing)));
-                    }
-                    byte[] result = callGeminiAPI(apiKey, selectedPersonUri, selectedClothingUri, currentPrompt);
+                    AtomicBoolean isApiRunning = new AtomicBoolean(true);
+                    startSimulatedProgress(0, 100, 11500, isApiRunning);
+
+                    byte[] result = callGeminiAPI(apiKey, personImageBytes, clothingImageBytes, currentPrompt);
+
+                    isApiRunning.set(false);
+                    updateProgressUIOnly(100);
 
                     if (getActivity() != null) {
                         getActivity().runOnUiThread(() -> {
@@ -731,7 +731,9 @@ public class GenerateFragment extends Fragment {
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         stopLoadingAnimation();
-                        DialogUtils.showDialog(requireContext(), getString(R.string.common_error), getString(R.string.generate_error_unexpected, e.getMessage()));
+                        DialogUtils.showDialog(requireContext(),
+                                getString(R.string.common_error),
+                                "Generation failed: " + e.getMessage());
                         generateButton.setEnabled(true);
                     });
                 }
@@ -741,7 +743,6 @@ public class GenerateFragment extends Fragment {
 
     private void saveToHistory(List<Uri> resultUris) {
         if(resultUris == null || resultUris.isEmpty()) return;
-
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < resultUris.size(); i++) {
             sb.append(resultUris.get(i).toString());
@@ -758,45 +759,60 @@ public class GenerateFragment extends Fragment {
 
     private void startLoadingAnimation() {
         loadingOverlay.setVisibility(View.VISIBLE);
-        currentProgress = 0;
         startTimeMillis = System.currentTimeMillis();
         progressBar.setProgress(0);
-        loadingStageText.setText(getString(R.string.loading_stage_preparing));
+        loadingPercentageText.setText("0%");
+        loadingStageText.setText("Generating...");
 
         progressTimer = new Timer();
         progressTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> updateProgressUI());
+                    long elapsedMillis = System.currentTimeMillis() - startTimeMillis;
+                    long seconds = elapsedMillis / 1000;
+                    long minutes = seconds / 60;
+                    long displaySeconds = seconds % 60;
+                    String timeStr = String.format("%02d:%02d", minutes, displaySeconds);
+                    getActivity().runOnUiThread(() -> loadingTimerText.setText(timeStr));
                 }
             }
-        }, 0, 100);
+        }, 0, 1000);
     }
 
-    private void updateProgressUI() {
-        long elapsedMillis = System.currentTimeMillis() - startTimeMillis;
-        long seconds = elapsedMillis / 1000;
-        long minutes = seconds / 60;
-        seconds = seconds % 60;
-        loadingTimerText.setText(String.format("%02d:%02d", minutes, seconds));
-
-        if (currentProgress < 20) {
-            currentProgress += 2;
-        } else if (currentProgress < 85) {
-            if (elapsedMillis % 200 < 100) currentProgress += 1;
+    private void updateProgressUIOnly(int progress) {
+        if (getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    progressBar.setProgress(progress, true);
+                } else {
+                    progressBar.setProgress(progress);
+                }
+                loadingPercentageText.setText(progress + "%");
+            });
         }
+    }
 
-        if (!isTryAllMode) {
-            if (currentProgress > 30 && currentProgress < 60) {
-                loadingStageText.setText(getString(R.string.loading_stage_designing));
-            } else if (currentProgress >= 60 && currentProgress < 90) {
-                loadingStageText.setText(getString(R.string.loading_stage_working));
-            }
-        }
+    private void startSimulatedProgress(int startPercent, int targetPercent, long durationMs, AtomicBoolean isRunning) {
+        if (getActivity() == null) return;
 
-        progressBar.setProgress(currentProgress);
-        loadingPercentageText.setText(currentProgress + "%");
+        getActivity().runOnUiThread(() -> {
+            simulatedProgressAnimator = ValueAnimator.ofInt(startPercent, targetPercent);
+            simulatedProgressAnimator.setDuration(durationMs);
+            simulatedProgressAnimator.setInterpolator(new LinearInterpolator()); // Makes the animation perfectly smooth and steady
+            simulatedProgressAnimator.addUpdateListener(animation -> {
+                if (isRunning.get()) {
+                    int currentProgress = (int) animation.getAnimatedValue();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        progressBar.setProgress(currentProgress, true);
+                    } else {
+                        progressBar.setProgress(currentProgress);
+                    }
+                    loadingPercentageText.setText(currentProgress + "%");
+                }
+            });
+            simulatedProgressAnimator.start();
+        });
     }
 
     private void stopLoadingAnimation() {
@@ -804,25 +820,24 @@ public class GenerateFragment extends Fragment {
             progressTimer.cancel();
             progressTimer = null;
         }
+        if (simulatedProgressAnimator != null) {
+            simulatedProgressAnimator.cancel();
+            simulatedProgressAnimator = null;
+        }
         loadingOverlay.setVisibility(View.GONE);
     }
 
-    private byte[] callGeminiAPI(String apiKey, Uri personUri, Uri clothingUri, String prompt) {
+    private byte[] callGeminiAPI(String apiKey, byte[] personImageBytes, byte[] clothingImageBytes, String prompt) throws Exception {
         try (Client client = new Client.Builder().apiKey(apiKey).build()) {
-            byte[] personImageBytes = getBytesFromUri(personUri);
-            byte[] clothingImageBytes = getBytesFromUri(clothingUri);
-
             Part textPart = Part.fromText(prompt);
             Part personImagePart = Part.fromBytes(personImageBytes, "image/jpeg");
             Part clothingImagePart = Part.fromBytes(clothingImageBytes, "image/jpeg");
-
             Content content = Content.fromParts(textPart, personImagePart, clothingImagePart);
 
             GenerateContentResponse response = client.models.generateContent(
                     "gemini-2.5-flash-image",
                     content,
                     null);
-
             ImmutableList<Part> parts = response.parts();
             if (parts != null) {
                 for (Part part : parts) {
@@ -832,10 +847,8 @@ public class GenerateFragment extends Fragment {
                     }
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            throw new Exception("API returned a response without valid image data.");
         }
-        return null;
     }
 
     private byte[] getBytesFromUri(Uri uri) throws IOException {
@@ -860,7 +873,6 @@ public class GenerateFragment extends Fragment {
         GridLayout gridLayout = root.findViewById(R.id.result_grid_container);
 
         generatedGridUris.clear();
-
         if (bitmap != null) {
             generatedImageUri = saveBitmapToCacheAndGetUri(bitmap);
             if (generatedImageUri == null) {
@@ -870,13 +882,11 @@ public class GenerateFragment extends Fragment {
             generatedGridUris.add(generatedImageUri);
 
             gridLayout.setVisibility(View.GONE);
-
             int radius = (int) (15 * getResources().getDisplayMetrics().density);
             Glide.with(this)
                     .load(generatedImageUri)
                     .transform(new FitCenter(), new RoundedCorners(radius))
                     .into(resultImage);
-
             resultImage.setVisibility(View.VISIBLE);
 
             ScrollView scrollView = root.findViewById(R.id.scrollView);
@@ -896,10 +906,8 @@ public class GenerateFragment extends Fragment {
         GridLayout gridLayout = root.findViewById(R.id.result_grid_container);
 
         generatedGridUris.clear();
-
         int[] gridIds = {R.id.grid_image_1, R.id.grid_image_2, R.id.grid_image_3, R.id.grid_image_4};
         for(int id : gridIds) root.findViewById(id).setVisibility(View.GONE);
-
         for (int i = 0; i < bitmaps.size() && i < gridIds.length; i++) {
             Bitmap bitmap = bitmaps.get(i);
             Uri uri = saveBitmapToCacheAndGetUri(bitmap);
@@ -922,7 +930,6 @@ public class GenerateFragment extends Fragment {
 
     private void showGeneratedImageDialog(int startIndex) {
         if (generatedGridUris.isEmpty()) return;
-
         currentVisibleDialogUri = generatedGridUris.get(startIndex);
 
         View overlayView = getLayoutInflater().inflate(R.layout.view_image_overlay, null);
@@ -932,7 +939,6 @@ public class GenerateFragment extends Fragment {
                 generatedGridUris,
                 (imageView, uri) -> Glide.with(GenerateFragment.this).load(uri).into(imageView)
         );
-
         builder.withStartPosition(startIndex);
         builder.withOverlayView(overlayView);
         builder.withImageChangeListener(position -> currentVisibleDialogUri = generatedGridUris.get(position));
@@ -941,7 +947,6 @@ public class GenerateFragment extends Fragment {
 
         ImageButton backButton = overlayView.findViewById(R.id.button_back);
         backButton.setOnClickListener(v -> dialog.dismiss());
-
         ImageButton saveButton = overlayView.findViewById(R.id.button_save);
         saveButton.setOnClickListener(v -> ImageSaveHelper.checkPermissionAndSave(requireActivity(), currentVisibleDialogUri));
 
