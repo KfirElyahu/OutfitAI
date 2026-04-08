@@ -66,6 +66,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -635,6 +637,28 @@ public class GenerateFragment extends Fragment {
         dialog.show();
     }
 
+    private String fetchGeminiApiKey() throws Exception {
+        URL url = new URL("https://gemini-key-provider.kfir8485.workers.dev/");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(5000);
+
+        int responseCode = connection.getResponseCode();
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                return response.toString().trim();
+            }
+        } else {
+            throw new Exception("Failed to fetch API key. HTTP Code: " + responseCode);
+        }
+    }
+
     private void generateOutfit() {
         if (selectedPersonUri == null || selectedClothingUri == null) {
             DialogUtils.showDialog(requireContext(),
@@ -664,7 +688,7 @@ public class GenerateFragment extends Fragment {
                 byte[] personImageBytes = getBytesFromUri(selectedPersonUri);
                 byte[] clothingImageBytes = getBytesFromUri(selectedClothingUri);
 
-                final String apiKey = ApiConfig.GEMINI_API_KEY;
+                final String apiKey = fetchGeminiApiKey();
 
                 if (isTryAllMode) {
                     List<Bitmap> results = new ArrayList<>();
@@ -728,6 +752,8 @@ public class GenerateFragment extends Fragment {
                 }
 
             } catch (Exception e) {
+                e.printStackTrace();
+
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         stopLoadingAnimation();
