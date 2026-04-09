@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.model;
 
 public class User {
     private String username;

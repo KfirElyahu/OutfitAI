@@ -1,6 +1,5 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.utils;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -11,6 +10,8 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
+
+import com.kfir.outfitai.R;
 
 public class DialogUtils {
 

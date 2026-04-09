@@ -1,14 +1,12 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.ui.auth;
 
 import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ScrollView;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
@@ -23,6 +21,18 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.kfir.outfitai.ui.feedback.FeedbacksActivity;
+import com.kfir.outfitai.ui.generate.GenerateActivity;
+import com.kfir.outfitai.R;
+import com.kfir.outfitai.data.HelperUserDB;
+import com.kfir.outfitai.data.SessionManager;
+import com.kfir.outfitai.model.User;
+import com.kfir.outfitai.utils.AnimationHelper;
+import com.kfir.outfitai.utils.DialogUtils;
+import com.kfir.outfitai.utils.ImeUtils;
+import com.kfir.outfitai.utils.LanguageDialogHelper;
+import com.kfir.outfitai.utils.LanguageManager;
+import com.kfir.outfitai.utils.NetworkUtils;
 
 public class SignInActivity extends AppCompatActivity {
 

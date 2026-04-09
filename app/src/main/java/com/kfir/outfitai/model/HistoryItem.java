@@ -1,10 +1,10 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.model;
 
 public class HistoryItem {
     private int id;
     private String personUri;
     private String clothUri;
-    private String resultUris; // Comma separated
+    private String resultUris;
     private long timestamp;
 
     public HistoryItem() {}

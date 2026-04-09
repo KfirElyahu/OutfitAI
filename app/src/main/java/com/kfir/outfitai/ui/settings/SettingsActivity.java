@@ -1,8 +1,7 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.ui.settings;
 
 import android.Manifest;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
@@ -14,9 +13,7 @@ import android.provider.MediaStore;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ScrollView;
@@ -26,13 +23,13 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
@@ -43,6 +40,18 @@ import com.google.android.material.imageview.ShapeableImageView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.kfir.outfitai.R;
+import com.kfir.outfitai.data.HelperUserDB;
+import com.kfir.outfitai.data.SessionManager;
+import com.kfir.outfitai.model.User;
+import com.kfir.outfitai.ui.feedback.FeedbacksActivity;
+import com.kfir.outfitai.ui.welcome.WelcomeActivity;
+import com.kfir.outfitai.utils.DialogUtils;
+import com.kfir.outfitai.utils.ImageUtils;
+import com.kfir.outfitai.utils.ImeUtils;
+import com.kfir.outfitai.utils.LanguageDialogHelper;
+import com.kfir.outfitai.utils.LanguageManager;
+import com.kfir.outfitai.utils.NetworkUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,9 +60,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SettingsFragment extends Fragment {
+public class SettingsActivity extends AppCompatActivity {
 
-    private static final String TAG = "SettingsFragment";
+    private static final String TAG = "SettingsActivity";
     private HelperUserDB dbHelper;
     private SessionManager sessionManager;
     private FirebaseAuth mAuth;
@@ -71,82 +80,72 @@ public class SettingsFragment extends Fragment {
     private static final String COLLECTION_PROFILE_PICS = "profile_images";
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setupImagePickers();
-    }
+        setContentView(R.layout.fragment_settings);
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_settings, container, false);
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        dbHelper = new HelperUserDB(requireContext());
-        sessionManager = new SessionManager(requireContext());
+        dbHelper = new HelperUserDB(this);
+        sessionManager = new SessionManager(this);
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
         currentEmail = sessionManager.getCurrentUserEmail();
 
-        editUsername = view.findViewById(R.id.edit_username);
-        editEmail = view.findViewById(R.id.edit_email);
-        editPassword = view.findViewById(R.id.edit_password);
-        editConfirmPassword = view.findViewById(R.id.edit_confirm_password);
-        profileImageView = view.findViewById(R.id.profile_image);
+        editUsername = findViewById(R.id.edit_username);
+        editEmail = findViewById(R.id.edit_email);
+        editPassword = findViewById(R.id.edit_password);
+        editConfirmPassword = findViewById(R.id.edit_confirm_password);
+        profileImageView = findViewById(R.id.profile_image);
 
-        View saveButton = view.findViewById(R.id.save_changes_button);
+        View saveButton = findViewById(R.id.save_changes_button);
         saveButton.setOnClickListener(v -> saveChanges());
 
-        View logoutButton = view.findViewById(R.id.Logout_button);
+        View logoutButton = findViewById(R.id.Logout_button);
         logoutButton.setOnClickListener(v -> {
             sessionManager.logoutUser();
             mAuth.signOut();
-            Intent intent = new Intent(requireContext(), WelcomeActivity.class);
+            Intent intent = new Intent(SettingsActivity.this, WelcomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
-            requireActivity().finish();
+            finish();
         });
 
-        View quitButton = view.findViewById(R.id.Quit_button);
+        View quitButton = findViewById(R.id.Quit_button);
         quitButton.setOnClickListener(v -> {
-            requireActivity().finishAffinity();
+            finishAffinity();
             System.exit(0);
         });
 
-        ImageButton togglePassBtn = view.findViewById(R.id.btn_toggle_password_settings);
+        ImageButton togglePassBtn = findViewById(R.id.btn_toggle_password_settings);
         setupPasswordToggle(editPassword, togglePassBtn);
 
-        ImageButton toggleConfirmBtn = view.findViewById(R.id.btn_toggle_confirm_settings);
+        ImageButton toggleConfirmBtn = findViewById(R.id.btn_toggle_confirm_settings);
         setupPasswordToggle(editConfirmPassword, toggleConfirmBtn);
 
-        view.findViewById(R.id.profile_image_clickable).setOnClickListener(v -> showImagePickerDialog());
+        findViewById(R.id.profile_image_clickable).setOnClickListener(v -> showImagePickerDialog());
 
         if (currentEmail == null || currentEmail.isEmpty() || currentEmail.equals("guest_user")) {
-            view.findViewById(R.id.form_container).setVisibility(View.GONE);
-            view.findViewById(R.id.profile_image_clickable).setEnabled(false);
-            DialogUtils.showDialog(requireContext(), getString(R.string.settings_error_guest_title), getString(R.string.settings_error_guest_msg));
+            findViewById(R.id.form_container).setVisibility(View.GONE);
+            findViewById(R.id.profile_image_clickable).setEnabled(false);
+            DialogUtils.showDialog(this, getString(R.string.settings_error_guest_title), getString(R.string.settings_error_guest_msg));
         } else {
             loadUserData();
-            setupKeyboardHandling(view);
+            setupImagePickers();
+            setupKeyboardHandling();
             syncProfilePicture();
         }
 
-        ImageButton languageBtn = view.findViewById(R.id.language_button);
+        ImageButton languageBtn = findViewById(R.id.language_button);
         if (languageBtn != null) {
             languageBtn.setOnClickListener(v -> {
-                LanguageDialogHelper.showLanguageSelectionDialog(requireActivity(), new LanguageManager(requireContext()), null);
+                LanguageDialogHelper.showLanguageSelectionDialog(this, new LanguageManager(this), null);
             });
         }
 
-        ImageButton reviewsButton = view.findViewById(R.id.reviews_button);
+        ImageButton reviewsButton = findViewById(R.id.reviews_button);
         if (reviewsButton != null) {
             reviewsButton.setOnClickListener(v -> {
-                startActivity(new Intent(requireContext(), FeedbacksActivity.class));
+                startActivity(new Intent(this, FeedbacksActivity.class));
             });
         }
     }
@@ -163,7 +162,7 @@ public class SettingsFragment extends Fragment {
     }
 
     private void loadProfileImageFromLocal() {
-        File localFile = ImageUtils.getLocalProfileFile(requireContext(), currentEmail);
+        File localFile = ImageUtils.getLocalProfileFile(this, currentEmail);
         if (localFile.exists()) {
             profileImageView.setImageTintList(null);
             Glide.with(this)
@@ -177,9 +176,9 @@ public class SettingsFragment extends Fragment {
     }
 
     private void syncProfilePicture() {
-        if (!NetworkUtils.isNetworkAvailable(requireContext())) return;
+        if (!NetworkUtils.isNetworkAvailable(this)) return;
 
-        File localFile = ImageUtils.getLocalProfileFile(requireContext(), currentEmail);
+        File localFile = ImageUtils.getLocalProfileFile(this, currentEmail);
 
         if (!localFile.exists()) {
             FirebaseUser fbUser = mAuth.getCurrentUser();
@@ -191,7 +190,7 @@ public class SettingsFragment extends Fragment {
                                 String base64 = documentSnapshot.getString("base64");
                                 if (base64 != null && !base64.isEmpty()) {
                                     try {
-                                        ImageUtils.saveBase64ToLocal(requireContext(), base64, currentEmail);
+                                        ImageUtils.saveBase64ToLocal(SettingsActivity.this, base64, currentEmail);
                                         loadProfileImageFromLocal();
                                     } catch (IOException e) {
                                         Log.e(TAG, "Failed to save downloaded image", e);
@@ -204,8 +203,8 @@ public class SettingsFragment extends Fragment {
     }
 
     private void saveChanges() {
-        if (!NetworkUtils.isNetworkAvailable(requireContext())) {
-            DialogUtils.showDialog(requireContext(), getString(R.string.settings_error_offline_title), getString(R.string.settings_error_offline_msg));
+        if (!NetworkUtils.isNetworkAvailable(this)) {
+            DialogUtils.showDialog(this, getString(R.string.settings_error_offline_title), getString(R.string.settings_error_offline_msg));
             return;
         }
 
@@ -228,10 +227,7 @@ public class SettingsFragment extends Fragment {
             finalPassword = newPassword;
         }
 
-        View rootView = getView();
-        if (rootView != null) {
-            rootView.findViewById(R.id.save_changes_button).setEnabled(false);
-        }
+        findViewById(R.id.save_changes_button).setEnabled(false);
 
         boolean usernameChanged = !newUsername.equals(currentUser.getUsername());
 
@@ -241,7 +237,7 @@ public class SettingsFragment extends Fragment {
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful() && !task.getResult().isEmpty()) {
                             editUsername.setError(getString(R.string.settings_error_username_taken));
-                            if (rootView != null) rootView.findViewById(R.id.save_changes_button).setEnabled(true);
+                            findViewById(R.id.save_changes_button).setEnabled(true);
                         } else {
                             proceedWithUpdates(newUsername, newEmail, finalP, currentUser);
                         }
@@ -254,14 +250,14 @@ public class SettingsFragment extends Fragment {
     private void proceedWithUpdates(String newUsername, String newEmail, String newPassword, User currentUser) {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
         if (firebaseUser == null) {
-            DialogUtils.showDialog(requireContext(), getString(R.string.common_error), getString(R.string.settings_error_auth_expired));
-            if (getView() != null) getView().findViewById(R.id.save_changes_button).setEnabled(true);
+            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_auth_expired));
+            findViewById(R.id.save_changes_button).setEnabled(true);
             return;
         }
 
         if (!newEmail.equals(currentUser.getEmail())) {
             firebaseUser.verifyBeforeUpdateEmail(newEmail);
-            DialogUtils.showDialog(requireContext(), getString(R.string.settings_error_auth_expired), getString(R.string.settings_msg_email_verify));
+            DialogUtils.showDialog(this, getString(R.string.settings_error_auth_expired), getString(R.string.settings_msg_email_verify));
         }
 
         if (!newPassword.equals(currentUser.getPassword())) {
@@ -279,7 +275,7 @@ public class SettingsFragment extends Fragment {
             if (imageUploadTask != null) {
                 tasks.add(imageUploadTask);
             } else {
-                Toast.makeText(requireContext(), getString(R.string.settings_error_image_upload), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.settings_error_image_upload), Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -290,11 +286,11 @@ public class SettingsFragment extends Fragment {
                     updatedUser.setEmail(newEmail);
                     updatedUser.setPassword(newPassword);
 
-                    File localFile = ImageUtils.getLocalProfileFile(requireContext(), newEmail);
+                    File localFile = ImageUtils.getLocalProfileFile(this, newEmail);
                     updatedUser.setProfilePicUri(Uri.fromFile(localFile).toString());
 
                     if (dbHelper.updateUserProfile(currentEmail, updatedUser)) {
-                        DialogUtils.showDialog(requireContext(), getString(R.string.common_success), getString(R.string.settings_msg_update_success), () -> {
+                        DialogUtils.showDialog(this, getString(R.string.common_success), getString(R.string.settings_msg_update_success), () -> {
                             if (!currentEmail.equals(newEmail)) {
                                 sessionManager.logoutUser();
                                 sessionManager.createLoginSession(newEmail);
@@ -302,20 +298,20 @@ public class SettingsFragment extends Fragment {
                             }
                             selectedProfileUri = null;
                             loadUserData();
-                            if (getView() != null) getView().findViewById(R.id.save_changes_button).setEnabled(true);
+                            findViewById(R.id.save_changes_button).setEnabled(true);
                         });
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Update failed", e);
-                    Toast.makeText(requireContext(), getString(R.string.settings_error_update_failed) + ": " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    if (getView() != null) getView().findViewById(R.id.save_changes_button).setEnabled(true);
+                    Toast.makeText(SettingsActivity.this, getString(R.string.settings_error_update_failed) + ": " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    findViewById(R.id.save_changes_button).setEnabled(true);
                 });
     }
 
     private Task<Void> prepareImageUploadTask(String uid, String emailForFilename) {
         try {
-            String base64Image = ImageUtils.processAndSaveImage(requireContext(), selectedProfileUri, emailForFilename);
+            String base64Image = ImageUtils.processAndSaveImage(this, selectedProfileUri, emailForFilename);
 
             if (base64Image != null) {
                 Map<String, Object> picData = new HashMap<>();
@@ -364,7 +360,7 @@ public class SettingsFragment extends Fragment {
     }
 
     private void showImagePickerDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.settings_dialog_pic_title));
         builder.setItems(new CharSequence[]{getString(R.string.common_gallery), getString(R.string.common_camera)}, (dialog, which) -> {
             switch (which) {
@@ -382,12 +378,12 @@ public class SettingsFragment extends Fragment {
     }
 
     private void checkCameraPermissionAndOpenCamera() {
-        if (!requireContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-            DialogUtils.showDialog(requireContext(), getString(R.string.common_error), getString(R.string.settings_error_no_camera));
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_no_camera));
             return;
         }
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
         } else {
             openCamera();
         }
@@ -395,8 +391,8 @@ public class SettingsFragment extends Fragment {
 
     private void openCamera() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (cameraIntent.resolveActivity(requireContext().getPackageManager()) == null) {
-            DialogUtils.showDialog(requireContext(), getString(R.string.common_error), getString(R.string.settings_error_no_camera_app));
+        if (cameraIntent.resolveActivity(getPackageManager()) == null) {
+            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_no_camera_app));
             return;
         }
         tempImageUri = createImageUri();
@@ -412,30 +408,31 @@ public class SettingsFragment extends Fragment {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "OutfitAI");
         }
-        return requireContext().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        return getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
     }
 
-    private void setupKeyboardHandling(View view) {
-        final ScrollView scrollView = view.findViewById(R.id.scrollView);
-        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+    private void setupKeyboardHandling() {
+        View mainView = findViewById(R.id.main);
+        final ScrollView scrollView = findViewById(R.id.scrollView);
+        ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom);
             return insets;
         });
-        ImeUtils.addImeListener(view, isVisible -> {
+        ImeUtils.addImeListener(mainView, isVisible -> {
             View contentContainer = scrollView.getChildAt(0);
             float density = getResources().getDisplayMetrics().density;
             int bottomPadding = isVisible ? (int) (300 * density) : (int) (50 * density);
             contentContainer.setPadding(0, 0, 0, bottomPadding);
             if (isVisible) scrollToFocusedView(scrollView);
         });
-        view.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
+        mainView.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
             if (newFocus instanceof EditText) scrollToFocusedView(scrollView);
         });
     }
 
     private void scrollToFocusedView(ScrollView scrollView) {
-        View focusedView = requireActivity().getCurrentFocus();
+        View focusedView = getCurrentFocus();
         if (focusedView == null || scrollView == null) return;
         scrollView.postDelayed(() -> {
             Rect rect = new Rect();

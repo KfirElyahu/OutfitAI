@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.utils;
 
 import android.app.Activity;
 import android.graphics.Color;
@@ -9,6 +9,7 @@ import android.view.Window;
 import android.widget.Button;
 import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.kfir.outfitai.R;
 
 public class LanguageDialogHelper {
 

@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.ui.settings;
 
 import android.Manifest;
 import android.content.ContentValues;
@@ -13,7 +13,9 @@ import android.provider.MediaStore;
 import android.text.method.HideReturnsTransformationMethod;
 import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ScrollView;
@@ -23,13 +25,13 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
@@ -40,6 +42,18 @@ import com.google.android.material.imageview.ShapeableImageView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.kfir.outfitai.R;
+import com.kfir.outfitai.data.HelperUserDB;
+import com.kfir.outfitai.data.SessionManager;
+import com.kfir.outfitai.model.User;
+import com.kfir.outfitai.ui.feedback.FeedbacksActivity;
+import com.kfir.outfitai.ui.welcome.WelcomeActivity;
+import com.kfir.outfitai.utils.DialogUtils;
+import com.kfir.outfitai.utils.ImageUtils;
+import com.kfir.outfitai.utils.ImeUtils;
+import com.kfir.outfitai.utils.LanguageDialogHelper;
+import com.kfir.outfitai.utils.LanguageManager;
+import com.kfir.outfitai.utils.NetworkUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,9 +62,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsFragment extends Fragment {
 
-    private static final String TAG = "SettingsActivity";
+    private static final String TAG = "SettingsFragment";
     private HelperUserDB dbHelper;
     private SessionManager sessionManager;
     private FirebaseAuth mAuth;
@@ -68,72 +82,82 @@ public class SettingsActivity extends AppCompatActivity {
     private static final String COLLECTION_PROFILE_PICS = "profile_images";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.fragment_settings);
+        setupImagePickers();
+    }
 
-        dbHelper = new HelperUserDB(this);
-        sessionManager = new SessionManager(this);
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_settings, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        dbHelper = new HelperUserDB(requireContext());
+        sessionManager = new SessionManager(requireContext());
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
         currentEmail = sessionManager.getCurrentUserEmail();
 
-        editUsername = findViewById(R.id.edit_username);
-        editEmail = findViewById(R.id.edit_email);
-        editPassword = findViewById(R.id.edit_password);
-        editConfirmPassword = findViewById(R.id.edit_confirm_password);
-        profileImageView = findViewById(R.id.profile_image);
+        editUsername = view.findViewById(R.id.edit_username);
+        editEmail = view.findViewById(R.id.edit_email);
+        editPassword = view.findViewById(R.id.edit_password);
+        editConfirmPassword = view.findViewById(R.id.edit_confirm_password);
+        profileImageView = view.findViewById(R.id.profile_image);
 
-        View saveButton = findViewById(R.id.save_changes_button);
+        View saveButton = view.findViewById(R.id.save_changes_button);
         saveButton.setOnClickListener(v -> saveChanges());
 
-        View logoutButton = findViewById(R.id.Logout_button);
+        View logoutButton = view.findViewById(R.id.Logout_button);
         logoutButton.setOnClickListener(v -> {
             sessionManager.logoutUser();
             mAuth.signOut();
-            Intent intent = new Intent(SettingsActivity.this, WelcomeActivity.class);
+            Intent intent = new Intent(requireContext(), WelcomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
-            finish();
+            requireActivity().finish();
         });
 
-        View quitButton = findViewById(R.id.Quit_button);
+        View quitButton = view.findViewById(R.id.Quit_button);
         quitButton.setOnClickListener(v -> {
-            finishAffinity();
+            requireActivity().finishAffinity();
             System.exit(0);
         });
 
-        ImageButton togglePassBtn = findViewById(R.id.btn_toggle_password_settings);
+        ImageButton togglePassBtn = view.findViewById(R.id.btn_toggle_password_settings);
         setupPasswordToggle(editPassword, togglePassBtn);
 
-        ImageButton toggleConfirmBtn = findViewById(R.id.btn_toggle_confirm_settings);
+        ImageButton toggleConfirmBtn = view.findViewById(R.id.btn_toggle_confirm_settings);
         setupPasswordToggle(editConfirmPassword, toggleConfirmBtn);
 
-        findViewById(R.id.profile_image_clickable).setOnClickListener(v -> showImagePickerDialog());
+        view.findViewById(R.id.profile_image_clickable).setOnClickListener(v -> showImagePickerDialog());
 
         if (currentEmail == null || currentEmail.isEmpty() || currentEmail.equals("guest_user")) {
-            findViewById(R.id.form_container).setVisibility(View.GONE);
-            findViewById(R.id.profile_image_clickable).setEnabled(false);
-            DialogUtils.showDialog(this, getString(R.string.settings_error_guest_title), getString(R.string.settings_error_guest_msg));
+            view.findViewById(R.id.form_container).setVisibility(View.GONE);
+            view.findViewById(R.id.profile_image_clickable).setEnabled(false);
+            DialogUtils.showDialog(requireContext(), getString(R.string.settings_error_guest_title), getString(R.string.settings_error_guest_msg));
         } else {
             loadUserData();
-            setupImagePickers();
-            setupKeyboardHandling();
+            setupKeyboardHandling(view);
             syncProfilePicture();
         }
 
-        ImageButton languageBtn = findViewById(R.id.language_button);
+        ImageButton languageBtn = view.findViewById(R.id.language_button);
         if (languageBtn != null) {
             languageBtn.setOnClickListener(v -> {
-                LanguageDialogHelper.showLanguageSelectionDialog(this, new LanguageManager(this), null);
+                LanguageDialogHelper.showLanguageSelectionDialog(requireActivity(), new LanguageManager(requireContext()), null);
             });
         }
 
-        ImageButton reviewsButton = findViewById(R.id.reviews_button);
+        ImageButton reviewsButton = view.findViewById(R.id.reviews_button);
         if (reviewsButton != null) {
             reviewsButton.setOnClickListener(v -> {
-                startActivity(new Intent(this, FeedbacksActivity.class));
+                startActivity(new Intent(requireContext(), FeedbacksActivity.class));
             });
         }
     }
@@ -150,7 +174,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void loadProfileImageFromLocal() {
-        File localFile = ImageUtils.getLocalProfileFile(this, currentEmail);
+        File localFile = ImageUtils.getLocalProfileFile(requireContext(), currentEmail);
         if (localFile.exists()) {
             profileImageView.setImageTintList(null);
             Glide.with(this)
@@ -164,9 +188,9 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void syncProfilePicture() {
-        if (!NetworkUtils.isNetworkAvailable(this)) return;
+        if (!NetworkUtils.isNetworkAvailable(requireContext())) return;
 
-        File localFile = ImageUtils.getLocalProfileFile(this, currentEmail);
+        File localFile = ImageUtils.getLocalProfileFile(requireContext(), currentEmail);
 
         if (!localFile.exists()) {
             FirebaseUser fbUser = mAuth.getCurrentUser();
@@ -178,7 +202,7 @@ public class SettingsActivity extends AppCompatActivity {
                                 String base64 = documentSnapshot.getString("base64");
                                 if (base64 != null && !base64.isEmpty()) {
                                     try {
-                                        ImageUtils.saveBase64ToLocal(SettingsActivity.this, base64, currentEmail);
+                                        ImageUtils.saveBase64ToLocal(requireContext(), base64, currentEmail);
                                         loadProfileImageFromLocal();
                                     } catch (IOException e) {
                                         Log.e(TAG, "Failed to save downloaded image", e);
@@ -191,8 +215,8 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void saveChanges() {
-        if (!NetworkUtils.isNetworkAvailable(this)) {
-            DialogUtils.showDialog(this, getString(R.string.settings_error_offline_title), getString(R.string.settings_error_offline_msg));
+        if (!NetworkUtils.isNetworkAvailable(requireContext())) {
+            DialogUtils.showDialog(requireContext(), getString(R.string.settings_error_offline_title), getString(R.string.settings_error_offline_msg));
             return;
         }
 
@@ -215,7 +239,10 @@ public class SettingsActivity extends AppCompatActivity {
             finalPassword = newPassword;
         }
 
-        findViewById(R.id.save_changes_button).setEnabled(false);
+        View rootView = getView();
+        if (rootView != null) {
+            rootView.findViewById(R.id.save_changes_button).setEnabled(false);
+        }
 
         boolean usernameChanged = !newUsername.equals(currentUser.getUsername());
 
@@ -225,7 +252,7 @@ public class SettingsActivity extends AppCompatActivity {
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful() && !task.getResult().isEmpty()) {
                             editUsername.setError(getString(R.string.settings_error_username_taken));
-                            findViewById(R.id.save_changes_button).setEnabled(true);
+                            if (rootView != null) rootView.findViewById(R.id.save_changes_button).setEnabled(true);
                         } else {
                             proceedWithUpdates(newUsername, newEmail, finalP, currentUser);
                         }
@@ -238,14 +265,14 @@ public class SettingsActivity extends AppCompatActivity {
     private void proceedWithUpdates(String newUsername, String newEmail, String newPassword, User currentUser) {
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
         if (firebaseUser == null) {
-            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_auth_expired));
-            findViewById(R.id.save_changes_button).setEnabled(true);
+            DialogUtils.showDialog(requireContext(), getString(R.string.common_error), getString(R.string.settings_error_auth_expired));
+            if (getView() != null) getView().findViewById(R.id.save_changes_button).setEnabled(true);
             return;
         }
 
         if (!newEmail.equals(currentUser.getEmail())) {
             firebaseUser.verifyBeforeUpdateEmail(newEmail);
-            DialogUtils.showDialog(this, getString(R.string.settings_error_auth_expired), getString(R.string.settings_msg_email_verify));
+            DialogUtils.showDialog(requireContext(), getString(R.string.settings_error_auth_expired), getString(R.string.settings_msg_email_verify));
         }
 
         if (!newPassword.equals(currentUser.getPassword())) {
@@ -263,7 +290,7 @@ public class SettingsActivity extends AppCompatActivity {
             if (imageUploadTask != null) {
                 tasks.add(imageUploadTask);
             } else {
-                Toast.makeText(this, getString(R.string.settings_error_image_upload), Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), getString(R.string.settings_error_image_upload), Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -274,11 +301,11 @@ public class SettingsActivity extends AppCompatActivity {
                     updatedUser.setEmail(newEmail);
                     updatedUser.setPassword(newPassword);
 
-                    File localFile = ImageUtils.getLocalProfileFile(this, newEmail);
+                    File localFile = ImageUtils.getLocalProfileFile(requireContext(), newEmail);
                     updatedUser.setProfilePicUri(Uri.fromFile(localFile).toString());
 
                     if (dbHelper.updateUserProfile(currentEmail, updatedUser)) {
-                        DialogUtils.showDialog(this, getString(R.string.common_success), getString(R.string.settings_msg_update_success), () -> {
+                        DialogUtils.showDialog(requireContext(), getString(R.string.common_success), getString(R.string.settings_msg_update_success), () -> {
                             if (!currentEmail.equals(newEmail)) {
                                 sessionManager.logoutUser();
                                 sessionManager.createLoginSession(newEmail);
@@ -286,20 +313,20 @@ public class SettingsActivity extends AppCompatActivity {
                             }
                             selectedProfileUri = null;
                             loadUserData();
-                            findViewById(R.id.save_changes_button).setEnabled(true);
+                            if (getView() != null) getView().findViewById(R.id.save_changes_button).setEnabled(true);
                         });
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Update failed", e);
-                    Toast.makeText(SettingsActivity.this, getString(R.string.settings_error_update_failed) + ": " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    findViewById(R.id.save_changes_button).setEnabled(true);
+                    Toast.makeText(requireContext(), getString(R.string.settings_error_update_failed) + ": " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    if (getView() != null) getView().findViewById(R.id.save_changes_button).setEnabled(true);
                 });
     }
 
     private Task<Void> prepareImageUploadTask(String uid, String emailForFilename) {
         try {
-            String base64Image = ImageUtils.processAndSaveImage(this, selectedProfileUri, emailForFilename);
+            String base64Image = ImageUtils.processAndSaveImage(requireContext(), selectedProfileUri, emailForFilename);
 
             if (base64Image != null) {
                 Map<String, Object> picData = new HashMap<>();
@@ -348,7 +375,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void showImagePickerDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         builder.setTitle(getString(R.string.settings_dialog_pic_title));
         builder.setItems(new CharSequence[]{getString(R.string.common_gallery), getString(R.string.common_camera)}, (dialog, which) -> {
             switch (which) {
@@ -366,12 +393,12 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void checkCameraPermissionAndOpenCamera() {
-        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_no_camera));
+        if (!requireContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+            DialogUtils.showDialog(requireContext(), getString(R.string.common_error), getString(R.string.settings_error_no_camera));
             return;
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
         } else {
             openCamera();
         }
@@ -379,8 +406,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void openCamera() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (cameraIntent.resolveActivity(getPackageManager()) == null) {
-            DialogUtils.showDialog(this, getString(R.string.common_error), getString(R.string.settings_error_no_camera_app));
+        if (cameraIntent.resolveActivity(requireContext().getPackageManager()) == null) {
+            DialogUtils.showDialog(requireContext(), getString(R.string.common_error), getString(R.string.settings_error_no_camera_app));
             return;
         }
         tempImageUri = createImageUri();
@@ -396,31 +423,30 @@ public class SettingsActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + File.separator + "OutfitAI");
         }
-        return getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        return requireContext().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
     }
 
-    private void setupKeyboardHandling() {
-        View mainView = findViewById(R.id.main);
-        final ScrollView scrollView = findViewById(R.id.scrollView);
-        ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
+    private void setupKeyboardHandling(View view) {
+        final ScrollView scrollView = view.findViewById(R.id.scrollView);
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom);
             return insets;
         });
-        ImeUtils.addImeListener(mainView, isVisible -> {
+        ImeUtils.addImeListener(view, isVisible -> {
             View contentContainer = scrollView.getChildAt(0);
             float density = getResources().getDisplayMetrics().density;
             int bottomPadding = isVisible ? (int) (300 * density) : (int) (50 * density);
             contentContainer.setPadding(0, 0, 0, bottomPadding);
             if (isVisible) scrollToFocusedView(scrollView);
         });
-        mainView.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
+        view.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
             if (newFocus instanceof EditText) scrollToFocusedView(scrollView);
         });
     }
 
     private void scrollToFocusedView(ScrollView scrollView) {
-        View focusedView = getCurrentFocus();
+        View focusedView = requireActivity().getCurrentFocus();
         if (focusedView == null || scrollView == null) return;
         scrollView.postDelayed(() -> {
             Rect rect = new Rect();

@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.utils;
 
 import android.Manifest;
 import android.app.Activity;
@@ -13,6 +13,8 @@ import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import com.kfir.outfitai.R;
 
 import java.io.File;
 import java.io.IOException;

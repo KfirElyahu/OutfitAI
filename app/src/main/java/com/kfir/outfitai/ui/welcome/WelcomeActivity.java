@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.ui.welcome;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -6,7 +6,6 @@ import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.ColorDrawable;
@@ -27,8 +26,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.os.LocaleListCompat;
 
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.kfir.outfitai.ui.feedback.FeedbacksActivity;
+import com.kfir.outfitai.ui.generate.GenerateActivity;
+import com.kfir.outfitai.R;
+import com.kfir.outfitai.data.SessionManager;
+import com.kfir.outfitai.ui.auth.SignInActivity;
+import com.kfir.outfitai.ui.auth.SignUpActivity;
+import com.kfir.outfitai.utils.LanguageDialogHelper;
+import com.kfir.outfitai.utils.LanguageManager;
 
 import java.util.Locale;
 

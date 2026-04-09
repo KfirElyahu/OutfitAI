@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.ui.feedback;
 
 import android.os.Bundle;
 import android.view.View;
@@ -14,6 +14,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.kfir.outfitai.ui.adapters.FeedbackAdapter;
+import com.kfir.outfitai.R;
+import com.kfir.outfitai.model.Feedback;
+import com.kfir.outfitai.utils.NetworkUtils;
 
 import java.util.ArrayList;
 import java.util.List;

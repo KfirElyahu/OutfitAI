@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.ui.generate;
 
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -11,6 +11,8 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
+import com.kfir.outfitai.ui.adapters.MainPagerAdapter;
+import com.kfir.outfitai.R;
 
 import java.lang.reflect.Field;
 

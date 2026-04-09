@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.data;
 
 import android.content.Context;
 import android.content.SharedPreferences;

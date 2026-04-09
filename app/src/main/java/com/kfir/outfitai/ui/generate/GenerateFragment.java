@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.ui.generate;
 
 import android.Manifest;
 import android.animation.ValueAnimator;
@@ -55,6 +55,18 @@ import com.google.genai.types.Blob;
 import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentResponse;
 import com.google.genai.types.Part;
+import com.kfir.outfitai.ui.feedback.FeedbacksActivity;
+import com.kfir.outfitai.R;
+import com.kfir.outfitai.data.HelperUserDB;
+import com.kfir.outfitai.data.SessionManager;
+import com.kfir.outfitai.model.HistoryItem;
+import com.kfir.outfitai.model.User;
+import com.kfir.outfitai.ui.welcome.WelcomeActivity;
+import com.kfir.outfitai.utils.DialogUtils;
+import com.kfir.outfitai.utils.ImageSaveHelper;
+import com.kfir.outfitai.utils.LanguageDialogHelper;
+import com.kfir.outfitai.utils.LanguageManager;
+import com.kfir.outfitai.utils.NetworkUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;

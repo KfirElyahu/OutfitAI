@@ -1,8 +1,7 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.utils;
 
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
-import android.view.animation.OvershootInterpolator;
 
 public class AnimationHelper {
 

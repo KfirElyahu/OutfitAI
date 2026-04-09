@@ -1,4 +1,4 @@
-package com.kfir.outfitai;
+package com.kfir.outfitai.utils;
 
 import android.view.View;
 import android.view.ViewTreeObserver;
