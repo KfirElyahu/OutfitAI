@@ -4,6 +4,7 @@ public class Feedback {
     private int rating;
     private String feedback;
     private String username;
+    private String userId;
     private long timestamp;
 
     public Feedback() {}
@@ -16,6 +17,9 @@ public class Feedback {
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }

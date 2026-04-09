@@ -25,7 +25,7 @@ public class ImageSaveHelper {
 
     public static void checkPermissionAndSave(Activity activity, Uri uriToSave) {
         if (uriToSave == null) {
-            DialogUtils.showDialog(activity, "Error", "No image to save.");
+            DialogUtils.showDialog(activity, activity.getString(R.string.common_error), activity.getString(R.string.save_error_no_image));
             return;
         }
 
@@ -59,7 +59,7 @@ public class ImageSaveHelper {
         } else {
             File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "OutfitAI");
             if (!directory.exists() && !directory.mkdirs()) {
-                Toast.makeText(activity, "Failed to create directory", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, activity.getString(R.string.settings_error_create_dir), Toast.LENGTH_SHORT).show();
                 return;
             }
             File file = new File(directory, fileName);
@@ -88,14 +88,14 @@ public class ImageSaveHelper {
                 resolver.update(itemUri, values, null, null);
             }
 
-            DialogUtils.showDialog(activity, "Success", "Image saved to Gallery successfully!");
+            DialogUtils.showDialog(activity, activity.getString(R.string.common_success), activity.getString(R.string.save_success_gallery));
 
         } catch (IOException e) {
             if (itemUri != null) {
                 resolver.delete(itemUri, null, null);
             }
             e.printStackTrace();
-            DialogUtils.showDialog(activity, "Failed", "Could not save image to gallery.");
+            DialogUtils.showDialog(activity, activity.getString(R.string.save_error_failed_title), activity.getString(R.string.save_error_gallery_failed));
         }
     }
 }

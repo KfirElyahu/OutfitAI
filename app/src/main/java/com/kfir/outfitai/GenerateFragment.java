@@ -449,13 +449,13 @@ public class GenerateFragment extends Fragment {
         if (!NetworkUtils.isNetworkAvailable(requireContext())) {
             DialogUtils.showDialog(requireContext(),
                     getString(R.string.rating_error_title),
-                    "No internet connection. Please try again later.");
+                    getString(R.string.generate_no_internet));
             return;
         }
 
         String userEmail = currentUserEmail != null ? currentUserEmail : "anonymous";
         String userId = "anonymous";
-        String username = "Anonymous";
+        String username = getString(R.string.feedback_anonymous);
 
         FirebaseUser firebaseUser = mAuth.getCurrentUser();
         if (firebaseUser != null) {
@@ -464,7 +464,7 @@ public class GenerateFragment extends Fragment {
 
         if (currentUserEmail != null) {
             if (currentUserEmail.equals("guest_user")) {
-                username = "Guest";
+                username = getString(R.string.guest_user_name);
             } else {
                 User user = dbHelper.getUserDetails(currentUserEmail);
                 if (user != null && user.getUsername() != null) {
@@ -558,7 +558,7 @@ public class GenerateFragment extends Fragment {
             }
         } catch (IOException | JSONException e) {
             e.printStackTrace();
-            availablePrompts.add("Default: Apply outfit from second image to person in first image.");
+            availablePrompts.add(getString(R.string.generate_default_prompt));
         }
 
         int savedIndex = userPrefs.getInt("last_prompt_index", 0);
@@ -670,7 +670,7 @@ public class GenerateFragment extends Fragment {
         if (!NetworkUtils.isNetworkAvailable(requireContext())) {
             DialogUtils.showDialog(requireContext(),
                     getString(R.string.common_error),
-                    "No internet connection. Please connect and try again.");
+                    getString(R.string.generate_no_internet));
             return;
         }
 
@@ -759,7 +759,7 @@ public class GenerateFragment extends Fragment {
                         stopLoadingAnimation();
                         DialogUtils.showDialog(requireContext(),
                                 getString(R.string.common_error),
-                                "Generation failed: " + e.getMessage());
+                                getString(R.string.generate_failed_exception, e.getMessage()));
                         generateButton.setEnabled(true);
                     });
                 }
@@ -787,8 +787,8 @@ public class GenerateFragment extends Fragment {
         loadingOverlay.setVisibility(View.VISIBLE);
         startTimeMillis = System.currentTimeMillis();
         progressBar.setProgress(0);
-        loadingPercentageText.setText("0%");
-        loadingStageText.setText("Generating...");
+        loadingPercentageText.setText(getString(R.string.loading_default_percent));
+        loadingStageText.setText(getString(R.string.generate_loading_generating));
 
         progressTimer = new Timer();
         progressTimer.schedule(new TimerTask() {
@@ -825,7 +825,7 @@ public class GenerateFragment extends Fragment {
         getActivity().runOnUiThread(() -> {
             simulatedProgressAnimator = ValueAnimator.ofInt(startPercent, targetPercent);
             simulatedProgressAnimator.setDuration(durationMs);
-            simulatedProgressAnimator.setInterpolator(new LinearInterpolator()); // Makes the animation perfectly smooth and steady
+            simulatedProgressAnimator.setInterpolator(new LinearInterpolator());
             simulatedProgressAnimator.addUpdateListener(animation -> {
                 if (isRunning.get()) {
                     int currentProgress = (int) animation.getAnimatedValue();
@@ -1041,7 +1041,7 @@ public class GenerateFragment extends Fragment {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 launchSpeechRecognizer();
             } else {
-                Toast.makeText(requireContext(), "Microphone permission is required for speech recognition", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), getString(R.string.generate_mic_permission), Toast.LENGTH_SHORT).show();
             }
         } else if (requestCode == ImageSaveHelper.WRITE_STORAGE_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {

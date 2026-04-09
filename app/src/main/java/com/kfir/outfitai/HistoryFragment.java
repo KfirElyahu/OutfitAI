@@ -109,7 +109,7 @@ public class HistoryFragment extends Fragment {
                     ImageSaveHelper.saveImageToGallery(requireActivity(), currentVisibleUri);
                 }
             } else {
-                DialogUtils.showDialog(requireContext(), "Permission Required", "Storage permission is required to save images.");
+                DialogUtils.showDialog(requireContext(), getString(R.string.history_permission_required), getString(R.string.history_storage_permission_msg));
             }
         }
     }

@@ -178,4 +178,17 @@
 
     <string name="feedbacks_title">משובי משתמשים</string>
     <string name="feedbacks_empty">אין משובים עדיין.</string>
+
+    <string name="feedback_anonymous">אנונימי</string>
+    <string name="feedbacks_no_internet">אין חיבור לאינטרנט</string>
+    <string name="feedbacks_load_failed">טעינת המשובים נכשלה</string>
+    <string name="generate_default_prompt">ברירת מחדל: החל את הלבוש מהתמונה השנייה על האדם בתמונה הראשונה.</string>
+    <string name="generate_no_internet">אין חיבור לאינטרנט. אנא התחבר ונסה שוב.</string>
+    <string name="generate_failed_exception">היצירה נכשלה: %1$s</string>
+    <string name="generate_mic_permission">נדרשת הרשאת מיקרופון לזיהוי דיבור</string>
+    <string name="generate_loading_generating">מייצר...</string>
+    <string name="settings_error_image_upload">עיבוד התמונה להעלאה נכשל</string>
+    <string name="guest_user_name">אורח</string>
+    <string name="history_permission_required">נדרשת הרשאה</string>
+    <string name="history_storage_permission_msg">כדי לשמור תמונות נדרשת הרשאת אחסון.</string>
 </resources>

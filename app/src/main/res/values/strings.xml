@@ -178,4 +178,17 @@
 
     <string name="feedbacks_title">User Feedbacks</string>
     <string name="feedbacks_empty">No feedbacks yet.</string>
+
+    <string name="feedback_anonymous">Anonymous</string>
+    <string name="feedbacks_no_internet">No internet connection</string>
+    <string name="feedbacks_load_failed">Failed to load feedbacks</string>
+    <string name="generate_default_prompt">Default: Apply outfit from second image to person in first image.</string>
+    <string name="generate_no_internet">No internet connection. Please connect and try again.</string>
+    <string name="generate_failed_exception">Generation failed: %1$s</string>
+    <string name="generate_mic_permission">Microphone permission is required for speech recognition</string>
+    <string name="generate_loading_generating">Generating...</string>
+    <string name="settings_error_image_upload">Failed to process image for upload</string>
+    <string name="guest_user_name">Guest</string>
+    <string name="history_permission_required">Permission Required</string>
+    <string name="history_storage_permission_msg">Storage permission is required to save images.</string>
 </resources>

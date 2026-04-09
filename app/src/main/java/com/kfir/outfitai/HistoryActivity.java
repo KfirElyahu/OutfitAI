@@ -101,7 +101,8 @@ public class HistoryActivity extends AppCompatActivity {
                     ImageSaveHelper.saveImageToGallery(this, currentVisibleUri);
                 }
             } else {
-                DialogUtils.showDialog(this, "Permission Required", "Storage permission is required to save images.");
+                DialogUtils.showDialog(this, getString(R.string.history_permission_required), getString(R.string.history_storage_permission_msg));
+
             }
         }
     }

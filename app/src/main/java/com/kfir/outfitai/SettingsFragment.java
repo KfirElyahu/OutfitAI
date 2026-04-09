@@ -279,7 +279,7 @@ public class SettingsFragment extends Fragment {
             if (imageUploadTask != null) {
                 tasks.add(imageUploadTask);
             } else {
-                Toast.makeText(requireContext(), "Failed to process image for upload", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), getString(R.string.settings_error_image_upload), Toast.LENGTH_SHORT).show();
             }
         }
 

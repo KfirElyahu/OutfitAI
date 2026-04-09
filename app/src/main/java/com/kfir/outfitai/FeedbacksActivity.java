@@ -52,7 +52,7 @@ public class FeedbacksActivity extends AppCompatActivity {
     private void fetchFeedbacks() {
         if (!NetworkUtils.isNetworkAvailable(this)) {
             progressBar.setVisibility(View.GONE);
-            Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.feedbacks_no_internet), Toast.LENGTH_SHORT).show();
             emptyText.setVisibility(View.VISIBLE);
             return;
         }
@@ -76,7 +76,7 @@ public class FeedbacksActivity extends AppCompatActivity {
                             emptyText.setVisibility(View.GONE);
                         }
                     } else {
-                        Toast.makeText(this, "Failed to load feedbacks", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.feedbacks_load_failed), Toast.LENGTH_SHORT).show();
                         emptyText.setVisibility(View.VISIBLE);
                     }
                 });

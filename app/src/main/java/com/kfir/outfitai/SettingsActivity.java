@@ -263,7 +263,7 @@ public class SettingsActivity extends AppCompatActivity {
             if (imageUploadTask != null) {
                 tasks.add(imageUploadTask);
             } else {
-                Toast.makeText(this, "Failed to process image for upload", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.settings_error_image_upload), Toast.LENGTH_SHORT).show();
             }
         }
 
