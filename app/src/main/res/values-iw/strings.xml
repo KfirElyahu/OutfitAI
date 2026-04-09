@@ -75,10 +75,10 @@
     <string name="generate_error_camera_capture">צילום התמונה נכשל.</string>
     <string name="generate_error_camera_missing">לא נמצאה אפליקציית מצלמה במכשיר.</string>
     <string name="generate_error_missing_images_title">חסרות תמונות</string>
-    <string name="generate_error_missing_images_msg">בחר/י גם תמונה של אדם וגם תמונה של בגד לפני יצירת הלוק.</string>
+    <string name="generate_error_missing_images_msg">בחר/י גם תמונה של אדם וגם תמונה של בגד לפני יצירת התלבושת.</string>
     <string name="generate_error_failed_title">יצירה נכשלה</string>
-    <string name="generate_error_failed_msg">ה-AI לא הצליח ליצור את הלוק. נסה/י תמונות אחרות.</string>
-    <string name="generate_error_failed_msg_plural">ה-AI לא הצליח ליצור את הלוקים. נסה/י תמונות אחרות.</string>
+    <string name="generate_error_failed_msg">ה-AI לא הצליח ליצור את התלבושת. נסה/י תמונות אחרות.</string>
+    <string name="generate_error_failed_msg_plural">ה-AI לא הצליח ליצור את התלבושות. נסה/י תמונות אחרות.</string>
     <string name="generate_error_unexpected">אירעה שגיאה בלתי צפויה: %1$s</string>
     <string name="generate_error_storage_title">שגיאת אחסון</string>
     <string name="generate_error_cache_failed">שמירת התמונה שנוצרה במטמון נכשלה.</string>
@@ -93,13 +93,13 @@
     <string name="prompt_msg_selected_all">נבחר: נסה/י את כל הפרומפטים</string>
     <string name="prompt_msg_selected_one">נבחר: פרומפט %1$d</string>
 
-    <string name="loading_title_creating">יוצרים לך לוק...</string>
+    <string name="loading_title_creating">יוצרים לך תלבושת...</string>
     <string name="loading_stage_uploading">מעלים את התמונות...</string>
     <string name="loading_stage_preparing">מכינים את התמונות...</string>
-    <string name="loading_stage_designing">מעצבים לך את הלוק...</string>
+    <string name="loading_stage_designing">מעצבים לך את התלבושת...</string>
     <string name="loading_stage_working">עדיין עובדים על זה...</string>
-    <string name="loading_stage_designing_variation">מעצבים וריאציה %1$d...</string>
-    <string name="loading_stage_ai_designing">ה-AI מעצב את הלוק...</string>
+    <string name="loading_stage_designing_variation">מעצבים תלבושת מספר %1$d...</string>
+    <string name="loading_stage_ai_designing">ה-AI מעצב את התלבושת...</string>
     <string name="loading_default_percent">0%</string>
     <string name="loading_default_timer">00:00</string>
 
